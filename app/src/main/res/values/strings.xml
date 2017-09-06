@@ -90,15 +90,32 @@
     <string name="select_pay_to">Select Account to Pay To </string>
     <string name="select_pay_from">Select Account to Pay From </string>
     <string name="enter_remarks">Enter Remarks for transfer</string>
+    <string name="select_beneficiary">Select Beneficiary</string>
     <string name="continue_str">Continue</string>
     <string name="close">Close</string>
+    <string name="choose_transfer_type">Choose Transfer Type</string>
     <string name="transfer_to_savings">Transfer To Savings</string>
-
+    <string name="loan_charges">Loan Charges</string>
+    <string name="savings_charges">Savings Charges</string>
     <string name="active">Active</string>
     <string name="closed">Closed</string>
     <string name="need_approval">Need Approval</string>
     <string name="pending">Pending</string>
     <string name="matured">Matured</string>
+    <string name="create_an_account">Create an account</string>
+    <string name="first_name">First Name</string>
+    <string name="last_name">Last Name</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="register">Register</string>
+    <string name="request_id">Request Id</string>
+    <string name="authentication_token">Authentication Token</string>
+    <string name="verify">Verify</string>
+    <string name="verifying">Verifying</string>
+    <string name="sign_up">Signing up</string>
+    <string name="verified">User has been verified successfully</string>
+    <string name="rb_mobile">mobile</string>
+    <string name="rb_email">email</string>
+    <string name="verification_mode">Verification Mode</string>
 
     <string name="account_not_active_to_perform_deposit">Account should to be Active to perform a deposit</string>
     <string name="account_not_active_to_perform_transfer">Account should to be Active to perform a transfer</string>
@@ -124,6 +141,7 @@
     </string>
     <string name="error_recent_transactions_loading">Error loading in Recent Transactions</string>
     <string name="error_client_charge_loading">Error loading in client charges</string>
+    <string name="error_no_charge">No charges found.</string>
     <string name="error_client_not_found">Client Not Found</string>
     <string name="error_fetching_client">Failed to fetch Client</string>
     <string name="error_fetching_accounts">Failed to fetch Accounts</string>
@@ -138,6 +156,19 @@
     <string name="error_deleting_beneficiary">Failed to delete Beneficiary</string>
     <string name="error_loan_account_withdraw">Error in withdrawing loan account</string>
     <string name="error_fetching_third_party_transfer_template">Error to fetch Third Party Transfer template</string>
+    <string name="unauthorized_client">You are not authorized</string>
+    <string name="qr_code">QR Code</string>
+    <string name="share_qr_code">Share QR Code</string>
+    <string name="monitor">Monitor</string>
+    <string name="choose_option">Choose option</string>
+    <string name="view_transactions">View Transactions</string>
+    <string name="view_charges">View Charges</string>
+    <string name="view_loan_summary">View Loan summary</string>
+    <string name="view_repayment">View Repayment Schedule</string>
+    <string name="view_qr_code">View QR Code for this account</string>
+    <string name="last_trans">Last Transaction Details</string>
+    <string name="error_username_greater_than_six">Username should be greater than 6 alphabets</string>
+    <string name="error_invalid_email">Invalid email id</string>
 
     <string name="fetching_client">Fetching Client</string>
 
@@ -174,7 +205,6 @@
     <string name="repayment_schedule">Repayment Schedule</string>
     <string name="transactions">Transactions</string>
     <string name="transfer">Transfer</string>
-    <string name="outstanding_balance_str">%1$s %2$s</string>
     <string name="approval_pending">Approval Pending</string>
     <string name="waiting_for_disburse">Waiting for Disburse</string>
     <string name="closed_because_of_obligation">Closed because of some Obligations</string>
@@ -205,6 +235,7 @@
     <string name="end_date">End Date</string>
     <string name="filterd">Filtered</string>
     <string name="select_date">Please select start date and end date</string>
+    <string name="end_date_must_be_greater">End date must be greater than Start date</string>
     <string name="saving_account_transactions_details">Saving Account Transactions</string>
     <string name="no_internet_connection">No Internet Connection</string>
     <string name="disbursement_date">Disbursement Date</string>
@@ -243,6 +274,33 @@
     <string name="total_saving">Total Savings</string>
     <string name="accounts_overview">Account Overview</string>
     <string name="survey">Surveys</string>
+    <string name="activation_date">Activation Date</string>
+    <string name="groups">Groups</string>
+    <string name="user_details">User details</string>
+    <string name="client_type">Client Type</string>
+    <string name="client_classification">Client Classification</string>
+    <string name="select_mode">Select Mode</string>
+    <string name="add_beneficiary_option">Add Third Party Beneficiaries to your account.\nEither
+        enter manually or scan account QR code</string>
+    <string name="invalid_qr">You can\'t make action into your account, please scan other user
+        Savings and Loans Account QRCode</string>
+    <string name="add">Add</string>
+    <string name="scan">Scan</string>
+    <string name="enter_passcode">Enter 4 digit Passcode</string>
+    <string name="error_passcode">Passcode should be of 4 digit</string>
+    <string name="incorrect_passcode">Incorrect Passcode</string>
+    <string name="incorrect_passcode_more_than_three">You have entered incorrect Passcode more than 3 times</string>
+    <string name="skip">Skip</string>
+    <string name="save">Save</string>
+    <string name="passcode_setup">Setup a passcode to login</string>
+    <string name="forgot_passcode">Forgot passcode, login manually</string>
+    <string name="amount_greater_than_zero">Amount should be greater than zero</string>
+    <string name="about_us_under_construction">About Us Under Construction</string>
+    <string name="help_under_construction">Help Under Construction</string>
+    <string name="logout">Logout</string>
+    <string name="share_msg">Download Self Service app here: https://play.google.com/store/apps/details?id=
+    </string>
+    <string name="choose">Choose application</string>
 
     <!--Customer care details-->
     <string name="need_help">Contact Us</string>
@@ -260,9 +318,28 @@
     <string name="inactive_uc">INACTIVE</string>
 
     <!--Material Dialog-->
+    <string name="dialog_logout">Are you sure you want to logout?</string>
     <string name="dialog_action_ok">OK</string>
     <string name="dialog_action_cancel">Cancel</string>
     <string name="dialog_action_back">Back</string>
+    <string name="dialog_permission_denied">Permission Denied</string>
+    <string name="dialog_action_i_am_sure">I\'M Sure</string>
+    <string name="dialog_action_re_try">Retry</string>
+    <string name="dialog_action_app_settings">App Settings</string>
+    <string name="dialog_message_camera_permission_denied_prompt">Without camera permission you will
+        not be able to scan QR code to add beneficiary.Are you sure you want to deny this
+        permission?</string>
+    <string name="dialog_message_camera_permission_never_ask_again">You have denied permission to
+        use camera, without this permission you will not be able to add beneficiaries using QR Code.
+        Please enable it in settings</string>
+    <string name="dialog_message_phone_state_permission_denied_prompt">This permission is required
+        to show currency according to your country.Are you sure you want to deny it?</string>
+    <string name="dialog_message_phone_state_permission_never_ask_again">You have denied permission
+        to fetch Phone State, without this permission currency might not be shown in proper format.
+        Please enable it in settings</string>
+    <string name="msg_setting_activity_not_found">Something went wrong finding Settings activity.
+        \nGo to \'Settings\' and grant permission manually.
+    </string>
 
     <!--Format Strings-->
     <string name="hello_client">Hello, %1$s</string>
@@ -273,5 +350,51 @@
     <string name="string_and_int">%1$s: %2$d</string>
     <string name="invalid_amount">Invalid Amount</string>
     <string name="exit_message">Press back again to exit</string>
+
+    <string name="package_name" translatable="false">package</string>
+    <string name="permission_denied_camera">Permission Denied to use Camera</string>
+    <string name="one">1</string>
+    <string name="two">2</string>
+    <string name="three">3</string>
+    <string name="four">4</string>
+    <string name="five">5</string>
+    <string name="six">6</string>
+    <string name="seven">7</string>
+    <string name="eight">8</string>
+    <string name="nine">9</string>
+    <string name="zero">0</string>
+
+    <string name="faq">Frequently Asked Questions</string>
+    <string name="user_query">User Query</string>
+    <string name="call_now">Call now</string>
+    <string name="leave_email">Leave an email</string>
+    <string name="find_locations">Find Locations</string>
+
+    <string-array name="faq_qs">
+        <item>How do I apply for new loan account?</item>
+        <item>Where can I view my profile informaton?</item>
+        <item>Where can I see my Savings Accounts Transactions?</item>
+        <item>What is the use of QR Code?</item>
+        <item>How to create a beneficiary using QR Code?</item>
+        <item>How to make a payment for a Loan Account?</item>
+    </string-array>
+
+    <string-array name="faq_ans">
+        <item>To apply for loan account, click on \"Apply for Loan\" given on the Home Screen</item>
+        <item>You can view your profile information by clicking on the User Image present on Home
+            Screen</item>
+        <item>To view your savings account transactions, navigate to the Accounts Sections, click on
+            the required savings account, click on three dots present on top right and select
+            Transactions option</item>
+        <item>QrCode for any loan or savings accounts can be shared with other users which will
+            allow them to create a beneficiary.</item>
+        <item>In order to create a Beneficiary, goto Beneficiary option from Home Screen then click
+            on the circular button present on bottom right, choose the option to Scan which opens
+            your device camera, scan the QR Code of other person for which you want to create a
+            beneficiary, after filling in the other required detail you will be able to create a
+            Beneficiary using QR Code</item>
+        <item>To make a payment for a loan account, navigate to the Accounts Sections, choose LOAN</item>
+            then open your required Loan Account and click on Make Payment option.
+    </string-array>
 
 </resources>

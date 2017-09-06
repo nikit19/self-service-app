@@ -2,6 +2,7 @@ package org.mifos.selfserviceapp;
 
 import android.app.Application;
 import android.content.Context;
+import android.support.v7.app.AppCompatDelegate;
 
 import com.crashlytics.android.Crashlytics;
 import com.raizlabs.android.dbflow.config.FlowConfig;
@@ -11,6 +12,7 @@ import io.fabric.sdk.android.Fabric;
 import org.mifos.selfserviceapp.injection.component.ApplicationComponent;
 import org.mifos.selfserviceapp.injection.component.DaggerApplicationComponent;
 import org.mifos.selfserviceapp.injection.module.ApplicationModule;
+import org.mifos.selfserviceapp.utils.ForegroundChecker;
 
 /**
  * @author ishan
@@ -26,6 +28,10 @@ public class MifosSelfServiceApp extends Application {
         return (MifosSelfServiceApp) context.getApplicationContext();
     }
 
+    static {
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
+    }
+
     public static Context getContext() {
         return instance;
     }
@@ -36,6 +42,7 @@ public class MifosSelfServiceApp extends Application {
         Fabric.with(this, new Crashlytics());
         instance = this;
         FlowManager.init(new FlowConfig.Builder(this).build());
+        ForegroundChecker.init(this);
     }
 
     public ApplicationComponent component() {

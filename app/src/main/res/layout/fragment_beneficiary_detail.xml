@@ -11,7 +11,9 @@
     <TableLayout
         android:layout_width="match_parent"
         android:layout_marginLeft="@dimen/default_margin"
+        android:layout_marginStart="@dimen/default_margin"
         android:layout_marginRight="@dimen/default_margin"
+        android:layout_marginEnd="@dimen/default_margin"
         android:layout_marginTop="@dimen/table_row_padding_top"
         android:layout_height="wrap_content">
         <TableRow>
@@ -20,7 +22,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/beneficiary_name"
-                android:textSize="@dimen/text_medium"/>
+                android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"/>
 
             <TextView
                 android:id="@+id/tv_beneficiary_name"
@@ -29,7 +31,7 @@
                 android:layout_weight="1"
                 tools:text="@string/beneficiary_name"
                 android:textColor="@color/black"
-                android:textSize="@dimen/text_medium"/>
+                android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"/>
         </TableRow>
         <TableRow
             android:layout_marginTop="@dimen/default_margin">
@@ -38,7 +40,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/account_number"
                 android:layout_weight="1"
-                android:textSize="@dimen/text_medium"/>
+                android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"/>
 
             <TextView
                 android:id="@+id/tv_account_number"
@@ -47,7 +49,7 @@
                 android:layout_height="wrap_content"
                 tools:text="@string/account_number"
                 android:textColor="@color/black"
-                android:textSize="@dimen/text_medium"/>
+                android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"/>
         </TableRow>
 
 
@@ -72,7 +74,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/client_name"
                     android:layout_weight="1"
-                    android:textSize="@dimen/text_medium"/>
+                    android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"/>
 
                 <TextView
                     android:id="@+id/tv_client_name"
@@ -81,7 +83,7 @@
                     android:layout_height="wrap_content"
                     tools:text="client_name"
                     android:textColor="@color/black"
-                    android:textSize="@dimen/text_medium"/>
+                    android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"/>
             </TableRow>
             <TableRow android:layout_marginTop="@dimen/default_margin">
                 <TextView
@@ -89,7 +91,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/account_type"
-                    android:textSize="@dimen/text_medium"/>
+                    android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"/>
 
                 <TextView
                     android:id="@+id/tv_account_type"
@@ -98,7 +100,7 @@
                     android:layout_weight="1"
                     tools:text="account_type"
                     android:textColor="@color/black"
-                    android:textSize="@dimen/text_medium"/>
+                    android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"/>
             </TableRow>
             <TableRow
                 android:layout_marginTop="@dimen/default_margin">
@@ -107,7 +109,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/transfer_limit"
                     android:layout_weight="1"
-                    android:textSize="@dimen/text_medium"/>
+                    android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"/>
 
                 <TextView
                     android:id="@+id/tv_transfer_limit"
@@ -116,7 +118,7 @@
                     android:layout_height="wrap_content"
                     tools:text="transfer_limit"
                     android:textColor="@color/black"
-                    android:textSize="@dimen/text_medium"/>
+                    android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"/>
             </TableRow>
             <TableRow
                 android:layout_marginTop="@dimen/default_margin">
@@ -125,7 +127,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/office_name"
                     android:layout_weight="1"
-                    android:textSize="@dimen/text_medium"/>
+                    android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"/>
 
                 <TextView
                     android:id="@+id/tv_office_name"
@@ -134,7 +136,7 @@
                     android:layout_height="wrap_content"
                     tools:text="office_name"
                     android:textColor="@color/black"
-                    android:textSize="@dimen/text_medium"/>
+                    android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"/>
             </TableRow>
         </TableLayout>
     </android.support.v7.widget.CardView>

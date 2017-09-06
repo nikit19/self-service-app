@@ -7,19 +7,16 @@ import org.mifos.selfserviceapp.api.DataManager;
 import org.mifos.selfserviceapp.injection.ActivityContext;
 import org.mifos.selfserviceapp.models.AccountOptionAndBeneficiary;
 import org.mifos.selfserviceapp.models.beneficary.Beneficiary;
-import org.mifos.selfserviceapp.models.payload.TransferPayload;
 import org.mifos.selfserviceapp.models.templates.account.AccountOption;
 import org.mifos.selfserviceapp.models.templates.account.AccountOptionsTemplate;
 import org.mifos.selfserviceapp.presenters.base.BasePresenter;
 import org.mifos.selfserviceapp.ui.views.ThirdPartyTransferView;
-import org.mifos.selfserviceapp.utils.MFErrorParser;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
 
-import okhttp3.ResponseBody;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
@@ -38,6 +35,15 @@ public class ThirdPartyTransferPresenter extends BasePresenter<ThirdPartyTransfe
     private DataManager dataManager;
     private CompositeSubscription subscription;
 
+    /**
+     * Initialises the RecentTransactionsPresenter by automatically injecting an instance of
+     * {@link DataManager} and {@link Context}.
+     *
+     * @param dataManager DataManager class that provides access to the data
+     *                    via the API.
+     * @param context     Context of the view attached to the presenter. In this case
+     *                    it is that of an {@link android.support.v7.app.AppCompatActivity}
+     */
     @Inject
     public ThirdPartyTransferPresenter(DataManager dataManager, @ActivityContext Context context) {
         super(context);
@@ -56,6 +62,11 @@ public class ThirdPartyTransferPresenter extends BasePresenter<ThirdPartyTransfe
         subscription.clear();
     }
 
+    /**
+     * Fetches {@link AccountOptionsTemplate} and {@link List} of {@link Beneficiary} from server
+     * and notifies the view to display them. And in case of any error during fetching the required
+     * details it notifies the view.
+     */
     public void loadTransferTemplate() {
 
         checkViewAttached();
@@ -99,33 +110,11 @@ public class ThirdPartyTransferPresenter extends BasePresenter<ThirdPartyTransfe
                 }));
     }
 
-    public void makeTransfer(TransferPayload transferPayload) {
-        checkViewAttached();
-        getMvpView().showProgress();
-        subscription.add(dataManager.makeThirdPartyTransfer(transferPayload)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new Subscriber<ResponseBody>() {
-                    @Override
-                    public void onCompleted() {
-
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        getMvpView().hideProgress();
-                        getMvpView().showError(MFErrorParser.errorMessage(e));
-                    }
-
-                    @Override
-                    public void onNext(ResponseBody responseBody) {
-                        getMvpView().hideProgress();
-                        getMvpView().showTransferredSuccessfully();
-                    }
-                })
-        );
-    }
-
+    /**
+     * Retrieving {@link List} of {@code accountNumbers} from {@link List} of {@link AccountOption}
+     * @param accountOptions {@link List} of {@link AccountOption}
+     * @return Returns {@link List} containing {@code accountNumbers}
+     */
     public List<String> getAccountNumbersFromAccountOptions(List<AccountOption> accountOptions) {
         final List<String> accountNumbers = new ArrayList<>();
         Observable.from(accountOptions)
@@ -144,6 +133,11 @@ public class ThirdPartyTransferPresenter extends BasePresenter<ThirdPartyTransfe
         return accountNumbers;
     }
 
+    /**
+     * Retrieving {@link List} of {@code accountNumbers} from {@link List} of {@link Beneficiary}
+     * @param beneficiaries {@link List} of {@link Beneficiary}
+     * @return Returns {@link List} containing {@code accountNumbers}
+     */
     public List<String> getAccountNumbersFromBeneficiaries(final List<Beneficiary> beneficiaries) {
         final List<String> accountNumbers = new ArrayList<>();
         Observable.from(beneficiaries)
@@ -162,6 +156,15 @@ public class ThirdPartyTransferPresenter extends BasePresenter<ThirdPartyTransfe
         return accountNumbers;
     }
 
+    /**
+     * Searches for a {@link AccountOption} with provided {@code accountNo} from {@link List} of
+     * {@link AccountOption} and returns it.
+     * @param accountOptions {@link List} of {@link AccountOption}
+     * @param accountNo Account Number which needs to searched in {@link List} of
+     * {@link AccountOption}
+     * @return Returns {@link AccountOption} which has Account Number same as the provided
+     * {@code accountNo} in function parameter.
+     */
     public AccountOption searchAccount(List<AccountOption> accountOptions, final String accountNo) {
         final AccountOption[] account = {new AccountOption()};
         Observable.from(accountOptions)

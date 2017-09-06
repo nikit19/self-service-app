@@ -11,15 +11,20 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import org.mifos.selfserviceapp.R;
+import org.mifos.selfserviceapp.api.local.PreferencesHelper;
 import org.mifos.selfserviceapp.models.accounts.savings.SavingsWithAssociations;
 import org.mifos.selfserviceapp.models.accounts.savings.Status;
 import org.mifos.selfserviceapp.presenters.SavingAccountsDetailPresenter;
 import org.mifos.selfserviceapp.ui.activities.base.BaseActivity;
+import org.mifos.selfserviceapp.ui.enums.AccountType;
+import org.mifos.selfserviceapp.ui.enums.ChargeType;
 import org.mifos.selfserviceapp.ui.fragments.base.BaseFragment;
 import org.mifos.selfserviceapp.ui.views.SavingAccountsDetailView;
 import org.mifos.selfserviceapp.utils.CircularImageView;
 import org.mifos.selfserviceapp.utils.Constants;
+import org.mifos.selfserviceapp.utils.CurrencyUtil;
 import org.mifos.selfserviceapp.utils.DateHelper;
+import org.mifos.selfserviceapp.utils.QrCodeGenerator;
 import org.mifos.selfserviceapp.utils.SymbolsUtils;
 import org.mifos.selfserviceapp.utils.Toaster;
 import org.mifos.selfserviceapp.utils.Utils;
@@ -48,9 +53,6 @@ public class SavingAccountsDetailFragment extends BaseFragment implements Saving
 
     @BindView(R.id.tv_min_req_bal)
     TextView tvMiniRequiredBalance;
-
-    @BindView(R.id.tv_account_balance)
-    TextView tvAccountBalance;
 
     @BindView(R.id.tv_saving_account_number)
     TextView tvSavingAccountNumber;
@@ -83,11 +85,15 @@ public class SavingAccountsDetailFragment extends BaseFragment implements Saving
     TextView tvStatus;
 
     @Inject
+    PreferencesHelper preferencesHelper;
+
+    @Inject
     SavingAccountsDetailPresenter mSavingAccountsDetailPresenter;
 
     private View rootView;
     private long savingsId;
     private Status status;
+    private SavingsWithAssociations savingsWithAssociations;
 
     public static SavingAccountsDetailFragment newInstance(long savingsId) {
         SavingAccountsDetailFragment fragment = new SavingAccountsDetailFragment();
@@ -115,11 +121,30 @@ public class SavingAccountsDetailFragment extends BaseFragment implements Saving
         ButterKnife.bind(this, rootView);
         mSavingAccountsDetailPresenter.attachView(this);
 
-        mSavingAccountsDetailPresenter.loadSavingsWithAssociations(savingsId);
-
+        if (savedInstanceState == null) {
+            mSavingAccountsDetailPresenter.loadSavingsWithAssociations(savingsId);
+        }
         return rootView;
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(Constants.SAVINGS_ACCOUNTS, savingsWithAssociations);
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if (savedInstanceState != null) {
+            showSavingAccountsDetail((SavingsWithAssociations) savedInstanceState.
+                    getParcelable(Constants.SAVINGS_ACCOUNTS));
+        }
+    }
+
+    /**
+     * Opens up Phone Dialer
+     */
     @OnClick(R.id.tv_help_line_number)
     void dialHelpLineNumber() {
         Intent intent = new Intent(Intent.ACTION_DIAL);
@@ -127,6 +152,10 @@ public class SavingAccountsDetailFragment extends BaseFragment implements Saving
         startActivity(intent);
     }
 
+    /**
+     * Opens {@link SavingsMakeTransferFragment} if status is ACTIVE else shows a
+     * {@link android.support.design.widget.Snackbar} that Account should be Active
+     */
     @OnClick(R.id.tv_deposit)
     void deposit() {
         if (status.getActive()) {
@@ -137,6 +166,10 @@ public class SavingAccountsDetailFragment extends BaseFragment implements Saving
         }
     }
 
+    /**
+     * Opens {@link SavingsMakeTransferFragment} if status is ACTIVE else shows a
+     * {@link android.support.design.widget.Snackbar} that Account should be Active
+     */
     @OnClick(R.id.tv_make_a_transfer)
     void transfer() {
         if (status.getActive()) {
@@ -147,6 +180,10 @@ public class SavingAccountsDetailFragment extends BaseFragment implements Saving
         }
     }
 
+    /**
+     * Sets Saving account basic info fetched from the server
+     * @param savingsWithAssociations object containing details of a saving account
+     */
     @Override
     public void showSavingAccountsDetail(SavingsWithAssociations savingsWithAssociations) {
         layoutAccount.setVisibility(View.VISIBLE);
@@ -155,19 +192,21 @@ public class SavingAccountsDetailFragment extends BaseFragment implements Saving
         Double accountBalance = savingsWithAssociations.getSummary().getAccountBalance();
 
         tvAccountStatus.setText(savingsWithAssociations.getClientName());
-        tvMiniRequiredBalance.setText(getString(R.string.double_and_String,
-                savingsWithAssociations.getMinRequiredOpeningBalance(), currencySymbol));
-        tvTotalWithDrawals.setText(getString(R.string.double_and_String,
-                savingsWithAssociations.getSummary().getTotalWithdrawals(), currencySymbol));
-        tvAccountBalance.setText(
-                getString(R.string.double_and_String, accountBalance, currencySymbol));
-        tvAccountBalanceMain.setText(
-                getString(R.string.double_and_String, accountBalance, currencySymbol));
+        if (savingsWithAssociations.getMinRequiredOpeningBalance() != null) {
+            tvMiniRequiredBalance.setText(getString(R.string.string_and_string, currencySymbol,
+                    CurrencyUtil.formatCurrency(getActivity(), savingsWithAssociations.
+                    getMinRequiredOpeningBalance())));
+        }
+        tvTotalWithDrawals.setText(getString(R.string.string_and_string,
+                currencySymbol, CurrencyUtil.formatCurrency(getActivity(), savingsWithAssociations.
+                        getSummary().getTotalWithdrawals())));
+        tvAccountBalanceMain.setText(getString(R.string.string_and_string,
+                currencySymbol, CurrencyUtil.formatCurrency(getActivity(), accountBalance)));
         tvNominalInterestRate.setText(getString(R.string.double_and_String,
                 savingsWithAssociations.getNominalAnnualInterestRate(), SymbolsUtils.PERCENT));
         tvSavingAccountNumber.setText(String.valueOf(savingsWithAssociations.getAccountNo()));
-        tvTotalDeposits.setText(getString(R.string.double_and_String,
-                savingsWithAssociations.getSummary().getTotalDeposits(), currencySymbol));
+        tvTotalDeposits.setText(getString(R.string.string_and_double,
+                currencySymbol , savingsWithAssociations.getSummary().getTotalDeposits()));
 
         if (!savingsWithAssociations.getTransactions().isEmpty()) {
             tvLastTransaction.setText(getString(R.string.double_and_String,
@@ -180,9 +219,14 @@ public class SavingAccountsDetailFragment extends BaseFragment implements Saving
             tvMadeOnTextView.setVisibility(View.GONE);
         }
 
+        this.savingsWithAssociations = savingsWithAssociations;
         showAccountStatus(savingsWithAssociations);
     }
 
+    /**
+     * It is called whenever any error occurs while executing a request
+     * @param message Error message that tells the user about the problem.
+     */
     @Override
     public void showErrorFetchingSavingAccountsDetail(String message) {
         layoutAccount.setVisibility(View.GONE);
@@ -190,6 +234,11 @@ public class SavingAccountsDetailFragment extends BaseFragment implements Saving
         tvStatus.setText(message);
     }
 
+    /**
+     * Sets the status of account i.e. {@code tvAccountStatus} and {@code ivCircularStatus} color
+     * according to {@code savingsWithAssociations}
+     * @param savingsWithAssociations object containing details of a saving account
+     */
     @Override
     public void showAccountStatus(SavingsWithAssociations savingsWithAssociations) {
         status = savingsWithAssociations.getStatus();
@@ -214,6 +263,7 @@ public class SavingAccountsDetailFragment extends BaseFragment implements Saving
                     Utils.setCircularBackground(R.color.black, getActivity()));
             tvAccountStatus.setText(R.string.closed);
         }
+        getActivity().invalidateOptionsMenu();
     }
 
     @Override
@@ -234,4 +284,26 @@ public class SavingAccountsDetailFragment extends BaseFragment implements Saving
         hideProgressBar();
         mSavingAccountsDetailPresenter.detachView();
     }
+
+    @OnClick(R.id.ll_savings_transactions)
+    public void transactionsClicked() {
+        ((BaseActivity) getActivity()).replaceFragment(SavingAccountsTransactionFragment.
+                newInstance(savingsId), true, R.id.container);
+    }
+
+    @OnClick(R.id.ll_savings_charges)
+    public void chargeClicked() {
+        ((BaseActivity) getActivity()).replaceFragment(ClientChargeFragment.
+                newInstance(savingsId, ChargeType.SAVINGS), true, R.id.container);
+    }
+
+    @OnClick(R.id.ll_savings_qr_code)
+    public void qrCodeClicked() {
+        String accountDetailsInJson = QrCodeGenerator.getAccountDetailsInString(
+                savingsWithAssociations.getAccountNo(), preferencesHelper.getOfficeName(),
+                AccountType.SAVINGS);
+        ((BaseActivity) getActivity()).replaceFragment(QrCodeDisplayFragment.
+                newInstance(accountDetailsInJson), true, R.id.container);
+    }
+
 }

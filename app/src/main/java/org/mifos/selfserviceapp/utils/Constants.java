@@ -57,4 +57,35 @@ public class Constants {
 
     public static final String PAYLOAD = "payload";
 
+    public static final int REQUEST_PERMISSION_SETTING = 254;
+
+    public static final int PERMISSIONS_REQUEST_CAMERA = 1;
+
+    public static final int PERMISSIONS_REQUEST_READ_PHONE_STATE = 2;
+
+    public static final String PERMISSIONS_CAMERA_STATUS = "camera_status";
+
+    public static final String PERMISSIONS_READ_PHONE_STATE_STATUS = "read_phone_status";
+
+    public static final String INTIAL_LOGIN = "initial_login";
+
+    public static final String CHARGE_TYPE = "charge_type";
+
+    public static final String QR_DATA = "qrcode_data";
+
+    public static final String TEMPLATE = "template";
+
+    public static final String RECENT_TRANSACTIONS = "recent_transactions";
+
+    public static final String CHARGES = "charges";
+
+    public static final String HELP = "help";
+
+    public static final String USER_PROFILE = "user_profile";
+
+    public static final String USER_DETAILS = "user_details";
+
+    public static final String TOTAL_LOAN = "total_loan";
+
+    public static final String TOTAL_SAVINGS = "total_savings";
 }

@@ -7,7 +7,9 @@ package org.mifos.selfserviceapp.ui.fragments;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.LinearLayoutManager;
@@ -26,11 +28,11 @@ import org.mifos.selfserviceapp.models.accounts.loan.LoanAccount;
 import org.mifos.selfserviceapp.models.accounts.savings.SavingAccount;
 import org.mifos.selfserviceapp.models.accounts.share.ShareAccount;
 import org.mifos.selfserviceapp.presenters.AccountsPresenter;
+import org.mifos.selfserviceapp.ui.activities.LoanApplicationActivity;
 import org.mifos.selfserviceapp.ui.activities.base.BaseActivity;
 import org.mifos.selfserviceapp.ui.adapters.CheckBoxAdapter;
 import org.mifos.selfserviceapp.ui.adapters.ViewPagerAdapter;
 import org.mifos.selfserviceapp.ui.enums.AccountType;
-import org.mifos.selfserviceapp.ui.enums.LoanState;
 import org.mifos.selfserviceapp.ui.fragments.base.BaseFragment;
 import org.mifos.selfserviceapp.ui.views.AccountsView;
 import org.mifos.selfserviceapp.utils.Constants;
@@ -43,6 +45,7 @@ import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 public class ClientAccountsFragment extends BaseFragment implements AccountsView {
 
@@ -51,6 +54,10 @@ public class ClientAccountsFragment extends BaseFragment implements AccountsView
 
     @BindView(R.id.tabs)
     TabLayout tabLayout;
+
+
+    @BindView(R.id.fab_create_loan)
+    FloatingActionButton fabCreateLoan;
 
     @Inject
     AccountsPresenter accountsPresenter;
@@ -61,10 +68,9 @@ public class ClientAccountsFragment extends BaseFragment implements AccountsView
     private RecyclerView checkBoxRecyclerView;
     private AccountType accountType;
 
-    public static ClientAccountsFragment newInstance(long clientId, AccountType accountType) {
+    public static ClientAccountsFragment newInstance(AccountType accountType) {
         ClientAccountsFragment clientAccountsFragment = new ClientAccountsFragment();
         Bundle args = new Bundle();
-        args.putLong(Constants.CLIENT_ID, clientId);
         args.putSerializable(Constants.ACCOUNT_TYPE, accountType);
         clientAccountsFragment.setArguments(args);
         return clientAccountsFragment;
@@ -90,11 +96,17 @@ public class ClientAccountsFragment extends BaseFragment implements AccountsView
 
         setUpViewPagerAndTabLayout();
 
-        accountsPresenter.loadClientAccounts();
+        if (savedInstanceState == null) {
+            accountsPresenter.loadClientAccounts();
+        }
 
         return view;
     }
 
+    /**
+     * Setting up {@link ViewPagerAdapter} and {@link TabLayout} for Savings, Loans and Share
+     * accounts. {@code accountType} is used for setting the current Fragment
+     */
     private void setUpViewPagerAndTabLayout() {
         ViewPagerAdapter viewPagerAdapter = new ViewPagerAdapter(getChildFragmentManager());
 
@@ -124,6 +136,18 @@ public class ClientAccountsFragment extends BaseFragment implements AccountsView
             public void onPageScrolled(int position, float positionOffset,
                     int positionOffsetPixels) {
                 getActivity().invalidateOptionsMenu();
+                fabCreateLoan.setVisibility(View.VISIBLE);
+                if (position == 0 && positionOffset == 0) {
+                    fabCreateLoan.setVisibility(View.GONE);
+                } else if (position < 1) {
+                    fabCreateLoan.setScaleX(positionOffset);
+                    fabCreateLoan.setScaleY(positionOffset);
+                } else if (position < 2) {
+                    fabCreateLoan.setScaleX(1 - positionOffset);
+                    fabCreateLoan.setScaleY(1 - positionOffset);
+                } else {
+                    fabCreateLoan.setVisibility(View.GONE);
+                }
             }
 
             @Override
@@ -136,10 +160,21 @@ public class ClientAccountsFragment extends BaseFragment implements AccountsView
         });
     }
 
+    /**
+     * Returns tag of Fragment present at {@code position}
+     * @param position position of Fragment
+     * @return Tag of Fragment
+     */
     private String getFragmentTag(int position) {
         return "android:switcher:" + R.id.viewpager + ":" + position;
     }
 
+    /**
+     * It provides with {@code shareAccounts} fetched from server which is then passed to fragment
+     * implementing {@link AccountsView} i.e. {@link AccountsFragment} which further displays them
+     * in a recyclerView
+     * @param shareAccounts {@link List} of {@link ShareAccount}
+     */
     @Override
     public void showShareAccounts(List<ShareAccount> shareAccounts) {
         ((AccountsView) getChildFragmentManager().findFragmentByTag(getFragmentTag(2))).
@@ -148,6 +183,12 @@ public class ClientAccountsFragment extends BaseFragment implements AccountsView
                 hideProgress();
     }
 
+    /**
+     * It provides with {@code loanAccounts} fetched from server which is then passed to fragment
+     * implementing {@link AccountsView} i.e. {@link AccountsFragment} which further displays them
+     * in a recyclerView
+     * @param loanAccounts {@link List} of {@link LoanAccount}
+     */
     @Override
     public void showLoanAccounts(List<LoanAccount> loanAccounts) {
         ((AccountsView) getChildFragmentManager().findFragmentByTag(getFragmentTag(1)))
@@ -156,6 +197,12 @@ public class ClientAccountsFragment extends BaseFragment implements AccountsView
                 .hideProgress();
     }
 
+    /**
+     * It provides with {@code savingAccounts} fetched from server which is then passed to fragment
+     * implementing {@link AccountsView} i.e. {@link AccountsFragment} which further displays them
+     * in a recyclerView
+     * @param savingAccounts {@link List} of {@link SavingAccount}
+     */
     @Override
     public void showSavingsAccounts(List<SavingAccount> savingAccounts) {
         ((AccountsView) getChildFragmentManager().findFragmentByTag(getFragmentTag(0)))
@@ -165,6 +212,19 @@ public class ClientAccountsFragment extends BaseFragment implements AccountsView
     }
 
 
+
+    @OnClick(R.id.fab_create_loan)
+    public void createLoan() {
+        startActivity(new Intent(getActivity(), LoanApplicationActivity.class));
+    }
+
+
+    /**
+     * It is called whenever any error occurs while executing a request which passes errorMessage to
+     * fragment implementing {@link AccountsView} i.e. {@link AccountsFragment} which further
+     * displays the errorMessage
+     * @param errorMessage Error message that tells the user about the problem.
+     */
     @Override
     public void showError(String errorMessage) {
         ((AccountsView) getChildFragmentManager().findFragmentByTag(getFragmentTag(0)))
@@ -194,7 +254,6 @@ public class ClientAccountsFragment extends BaseFragment implements AccountsView
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.menu_account, menu);
         if (viewPager.getCurrentItem() == 0) {
-            menu.findItem(R.id.menu_add_loan).setVisible(false);
             menu.findItem(R.id.menu_filter_savings).setVisible(true);
             menu.findItem(R.id.menu_filter_loan).setVisible(false);
             menu.findItem(R.id.menu_filter_shares).setVisible(false);
@@ -203,7 +262,6 @@ public class ClientAccountsFragment extends BaseFragment implements AccountsView
             menu.findItem(R.id.menu_search_share).setVisible(false);
             initSearch(menu, AccountType.SAVINGS);
         } else if (viewPager.getCurrentItem() == 1) {
-            menu.findItem(R.id.menu_add_loan).setVisible(true);
             menu.findItem(R.id.menu_filter_savings).setVisible(false);
             menu.findItem(R.id.menu_filter_loan).setVisible(true);
             menu.findItem(R.id.menu_filter_shares).setVisible(false);
@@ -212,7 +270,6 @@ public class ClientAccountsFragment extends BaseFragment implements AccountsView
             menu.findItem(R.id.menu_search_share).setVisible(false);
             initSearch(menu, AccountType.LOAN);
         } else if (viewPager.getCurrentItem() == 2) {
-            menu.findItem(R.id.menu_add_loan).setVisible(false);
             menu.findItem(R.id.menu_filter_savings).setVisible(false);
             menu.findItem(R.id.menu_filter_loan).setVisible(false);
             menu.findItem(R.id.menu_filter_shares).setVisible(true);
@@ -236,14 +293,15 @@ public class ClientAccountsFragment extends BaseFragment implements AccountsView
             case R.id.menu_filter_shares:
                 showFilterDialog(AccountType.SHARE);
                 break;
-            case R.id.menu_add_loan:
-                ((BaseActivity) getActivity()).replaceFragment(LoanApplicationFragment.
-                        newInstance(LoanState.CREATE), true, R.id.container);
-                break;
         }
         return true;
     }
 
+    /**
+     * Initializes the search option in {@link Menu} depending upon {@code account}
+     * @param menu Interface for managing the items in a menu.
+     * @param account An enum of {@link AccountType}
+     */
     private void initSearch(Menu menu, final AccountType account) {
         SearchManager manager = (SearchManager) getActivity().
                 getSystemService(Context.SEARCH_SERVICE);
@@ -283,6 +341,10 @@ public class ClientAccountsFragment extends BaseFragment implements AccountsView
         });
     }
 
+    /**
+     * Displays a filter dialog according to the {@code account} provided in the parameter
+     * @param account An enum of {@link AccountType}
+     */
     private void showFilterDialog(final AccountType account) {
         String title = "";
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());

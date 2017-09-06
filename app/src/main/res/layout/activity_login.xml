@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:background="@color/white"
-            android:fitsSystemWindows="true">
+<android.support.v4.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/white"
+    android:fitsSystemWindows="true">
 
     <LinearLayout
         android:id="@+id/ll_login"
@@ -11,7 +12,9 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingStart="@dimen/login_padding_left"
+        android:paddingLeft="@dimen/login_padding_left"
         android:paddingEnd="@dimen/login_padding_right"
+        android:paddingRight="@dimen/login_padding_right"
         android:paddingTop="@dimen/login_padding_top">
 
         <ImageView android:layout_width="wrap_content"
@@ -25,8 +28,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/default_margin"
+            android:id="@+id/til_username"
             android:layout_marginTop="@dimen/default_margin">
-            <EditText android:id="@+id/et_username"
+            <EditText
                       android:layout_width="match_parent"
                       android:layout_height="wrap_content"
                       android:hint="@string/username"
@@ -37,9 +41,11 @@
         <android.support.design.widget.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:id="@+id/til_password"
             android:layout_marginBottom="@dimen/default_margin"
-            android:layout_marginTop="@dimen/default_margin">
-            <EditText android:id="@+id/et_password"
+            android:layout_marginTop="@dimen/default_margin"
+            app:passwordToggleEnabled="true">
+            <EditText
                       android:layout_width="match_parent"
                       android:layout_height="wrap_content"
                       android:hint="@string/password"
@@ -48,15 +54,21 @@
 
         <android.support.v7.widget.AppCompatButton
             android:id="@+id/btn_login"
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/login_margin_bottom"
+            android:layout_marginBottom="@dimen/default_margin"
             android:layout_marginTop="@dimen/login_margin_top"
             android:textColor="@color/white"
-            android:background="@color/primary"
-            android:foreground="?selectableItemBackground"
-            android:padding="@dimen/login_padding_button"
             android:text="@string/login"/>
 
+        <android.support.v7.widget.AppCompatButton
+            android:id="@+id/btn_register"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/primary"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"
+            android:text="@string/create_an_account"/>
+
     </LinearLayout>
-</ScrollView>
+</android.support.v4.widget.NestedScrollView>

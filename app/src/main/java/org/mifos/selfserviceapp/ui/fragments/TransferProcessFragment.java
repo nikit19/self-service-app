@@ -14,9 +14,12 @@ import org.mifos.selfserviceapp.R;
 import org.mifos.selfserviceapp.models.payload.TransferPayload;
 import org.mifos.selfserviceapp.presenters.TransferProcessPresenter;
 import org.mifos.selfserviceapp.ui.activities.base.BaseActivity;
+import org.mifos.selfserviceapp.ui.enums.TransferType;
 import org.mifos.selfserviceapp.ui.fragments.base.BaseFragment;
 import org.mifos.selfserviceapp.ui.views.TransferProcessView;
 import org.mifos.selfserviceapp.utils.Constants;
+import org.mifos.selfserviceapp.utils.CurrencyUtil;
+import org.mifos.selfserviceapp.utils.Network;
 import org.mifos.selfserviceapp.utils.Toaster;
 
 import javax.inject.Inject;
@@ -57,11 +60,20 @@ public class TransferProcessFragment extends BaseFragment implements TransferPro
 
     private View rootView;
     private TransferPayload payload;
+    private TransferType transferType;
 
-    public static TransferProcessFragment newInstance(TransferPayload payload) {
+    /**
+     * Used for TPT Transfer and own Account Transfer.<br>
+     * Use {@code type} as TransferType.TPT for TPT and TransferType.SELF for self Account Transfer
+     * @param payload Transfer Information
+     * @param type enum of {@link TransferType}
+     * @return Instance of {@link TransferProcessFragment}
+     */
+    public static TransferProcessFragment newInstance(TransferPayload payload, TransferType type) {
         TransferProcessFragment fragment = new TransferProcessFragment();
         Bundle args = new Bundle();
         args.putParcelable(Constants.PAYLOAD, payload);
+        args.putSerializable(Constants.TRANSFER_TYPE, type);
         fragment.setArguments(args);
         return fragment;
     }
@@ -71,6 +83,7 @@ public class TransferProcessFragment extends BaseFragment implements TransferPro
         super.onCreate(savedInstanceState);
         if (getActivity() != null) {
             payload = getArguments().getParcelable(Constants.PAYLOAD);
+            transferType = (TransferType) getArguments().getSerializable(Constants.TRANSFER_TYPE);
         }
     }
 
@@ -85,7 +98,7 @@ public class TransferProcessFragment extends BaseFragment implements TransferPro
         ButterKnife.bind(this, rootView);
         presenter.attachView(this);
 
-        tvAmount.setText(String.valueOf(payload.getTransferAmount()));
+        tvAmount.setText(CurrencyUtil.formatCurrency(getActivity(), payload.getTransferAmount()));
         tvPayFrom.setText(String.valueOf(payload.getFromAccountId()));
         tvPayTo.setText(String.valueOf(payload.getToAccountId()));
         tvDate.setText(payload.getTransferDate());
@@ -93,23 +106,43 @@ public class TransferProcessFragment extends BaseFragment implements TransferPro
         return rootView;
     }
 
+    /**
+     * Initiates a transfer depending upon {@code transferType}
+     */
     @OnClick(R.id.btn_start_transfer)
     public void startTransfer() {
-        presenter.makeSavingsTransfer(payload);
+        if (!Network.isConnected(getActivity())) {
+            Toaster.show(rootView, getString(R.string.internet_not_connected));
+            return;
+        }
+        if (transferType == TransferType.SELF) {
+            presenter.makeSavingsTransfer(payload);
+        } else if (transferType == TransferType.TPT) {
+            presenter.makeTPTTransfer(payload);
+        }
     }
 
+    /**
+     * Cancels the Transfer and pops fragment
+     */
     @OnClick(R.id.btn_cancel_transfer)
     public void cancelTransfer() {
         getActivity().getSupportFragmentManager().popBackStack();
         getActivity().getSupportFragmentManager().popBackStack();
     }
 
+    /**
+     * Closes the transfer fragment
+     */
     @OnClick(R.id.btn_close)
     public void closeClicked() {
         getActivity().getSupportFragmentManager().popBackStack();
         getActivity().getSupportFragmentManager().popBackStack();
     }
 
+    /**
+     * Shows a {@link android.support.design.widget.Snackbar} on succesfull transfer of money
+     */
     @Override
     public void showTransferredSuccessfully() {
         Toaster.show(rootView, getString(R.string.transferred_Successfully));
@@ -118,6 +151,10 @@ public class TransferProcessFragment extends BaseFragment implements TransferPro
         llTransfer.setVisibility(View.GONE);
     }
 
+    /**
+     * It is called whenever any error occurs while executing a request
+     * @param msg Error message that tells the user about the problem.
+     */
     @Override
     public void showError(String msg) {
         Toaster.show(rootView, msg);

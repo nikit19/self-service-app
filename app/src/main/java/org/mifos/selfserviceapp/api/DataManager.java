@@ -17,6 +17,8 @@ import org.mifos.selfserviceapp.models.client.Client;
 import org.mifos.selfserviceapp.models.client.ClientAccounts;
 import org.mifos.selfserviceapp.models.payload.LoansPayload;
 import org.mifos.selfserviceapp.models.payload.TransferPayload;
+import org.mifos.selfserviceapp.models.register.RegisterPayload;
+import org.mifos.selfserviceapp.models.register.UserVerify;
 import org.mifos.selfserviceapp.models.templates.account.AccountOptionsTemplate;
 import org.mifos.selfserviceapp.models.templates.beneficiary.BeneficiaryTemplate;
 import org.mifos.selfserviceapp.models.templates.loans.LoanTemplate;
@@ -40,7 +42,7 @@ public class DataManager {
     private final PreferencesHelper preferencesHelper;
     private final BaseApiManager baseApiManager;
     private final DatabaseHelper databaseHelper;
-    private final long clientId;
+    private long clientId;
 
     @Inject
     public DataManager(PreferencesHelper preferencesHelper, BaseApiManager baseApiManager,
@@ -88,6 +90,14 @@ public class DataManager {
                         return databaseHelper.syncCharges(chargePage);
                     }
                 });
+    }
+
+    public Observable<List<Charge>> getLoanCharges(long loanId) {
+        return baseApiManager.getClientChargeApi().getLoanAccountChargeList(loanId);
+    }
+
+    public Observable<List<Charge>> getSavingsCharges(long savingsId) {
+        return baseApiManager.getClientChargeApi().getSavingsAccountChargeList(savingsId);
     }
 
     public Observable<SavingsWithAssociations> getSavingsWithAssociations(long accountId,
@@ -147,9 +157,9 @@ public class DataManager {
         return baseApiManager.getBeneficiaryApi().createBeneficiary(beneficiaryPayload);
     }
 
-    public Observable<ResponseBody> deleteBeneficiary(long beneficiaryId,
+    public Observable<ResponseBody> updateBeneficiary(long beneficiaryId,
                                                       BeneficiaryUpdatePayload payload) {
-        return baseApiManager.getBeneficiaryApi().deleteBeneficiary(beneficiaryId, payload);
+        return baseApiManager.getBeneficiaryApi().updateBeneficiary(beneficiaryId, payload);
     }
 
     public Observable<ResponseBody> deleteBeneficiary(long beneficiaryId) {
@@ -164,6 +174,14 @@ public class DataManager {
         return baseApiManager.getThirdPartyTransferApi().makeTransfer(transferPayload);
     }
 
+    public Observable<ResponseBody> registerUser(RegisterPayload registerPayload) {
+        return baseApiManager.getRegistrationApi().registerUser(registerPayload);
+    }
+
+    public Observable<ResponseBody> verifyUser(UserVerify userVerify) {
+        return baseApiManager.getRegistrationApi().verifyUser(userVerify);
+    }
+
     public PreferencesHelper getPreferencesHelper() {
         return preferencesHelper;
     }
@@ -174,4 +192,9 @@ public class DataManager {
     public long getClientId() {
         return clientId;
     }
+
+    public void setClientId(long clientId) {
+        this.clientId = clientId;
+    }
+
 }

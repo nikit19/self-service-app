@@ -2,7 +2,6 @@ package org.mifos.selfserviceapp.presenters;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.Base64;
 import android.util.Log;
 
@@ -12,6 +11,7 @@ import org.mifos.selfserviceapp.injection.ApplicationContext;
 import org.mifos.selfserviceapp.models.client.Client;
 import org.mifos.selfserviceapp.presenters.base.BasePresenter;
 import org.mifos.selfserviceapp.ui.views.UserDetailsView;
+import org.mifos.selfserviceapp.utils.ImageUtil;
 
 import java.io.IOException;
 
@@ -32,6 +32,15 @@ public class UserDetailsPresenter extends BasePresenter<UserDetailsView> {
     private final DataManager dataManager;
     private CompositeSubscription subscriptions;
 
+    /**
+     * Initialises the LoginPresenter by automatically injecting an instance of
+     * {@link DataManager} and {@link Context}.
+     *
+     * @param dataManager DataManager class that provides access to the data
+     *                    via the API.
+     * @param context     Context of the view attached to the presenter. In this case
+     *                    it is that of an {@link android.support.v7.app.AppCompatActivity}
+     */
     @Inject
     public UserDetailsPresenter(@ApplicationContext Context context, DataManager dataManager) {
         super(context);
@@ -50,6 +59,11 @@ public class UserDetailsPresenter extends BasePresenter<UserDetailsView> {
         subscriptions.unsubscribe();
     }
 
+    /**
+     * Fetches Details about Client from the server as {@link Client} and notifies the view to
+     * display the details. And in case of any error during fetching the required details it
+     * notifies the view.
+     */
     public void getUserDetails() {
         checkViewAttached();
         subscriptions.add(dataManager.getCurrentClient()
@@ -80,6 +94,10 @@ public class UserDetailsPresenter extends BasePresenter<UserDetailsView> {
         );
     }
 
+    /**
+     * Fetches Client image from the server in {@link Base64} format which is then decoded into a
+     * {@link Bitmap} after which the view notified to display it.
+     */
     public void getUserImage() {
         checkViewAttached();
         subscriptions.add(dataManager.getClientImage()
@@ -110,9 +128,8 @@ public class UserDetailsPresenter extends BasePresenter<UserDetailsView> {
                             final byte[] decodedBytes =
                                     Base64.decode(pureBase64Encoded, Base64.DEFAULT);
 
-                            Bitmap decodedBitmap =
-                                    BitmapFactory.decodeByteArray(decodedBytes, 0,
-                                            decodedBytes.length);
+                            Bitmap decodedBitmap = ImageUtil.getInstance().
+                                    compressImage(decodedBytes);
 
                             getMvpView().showUserImage(decodedBitmap);
                         } catch (IOException e) {

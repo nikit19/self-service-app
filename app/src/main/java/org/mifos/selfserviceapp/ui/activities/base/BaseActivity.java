@@ -1,6 +1,7 @@
 package org.mifos.selfserviceapp.ui.activities.base;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
@@ -16,13 +17,17 @@ import org.mifos.selfserviceapp.R;
 import org.mifos.selfserviceapp.injection.component.ActivityComponent;
 import org.mifos.selfserviceapp.injection.component.DaggerActivityComponent;
 import org.mifos.selfserviceapp.injection.module.ActivityModule;
+import org.mifos.selfserviceapp.ui.activities.PassCodeActivity;
 import org.mifos.selfserviceapp.ui.views.BaseActivityCallback;
+import org.mifos.selfserviceapp.utils.Constants;
+import org.mifos.selfserviceapp.utils.ForegroundChecker;
 
 /**
  * @author ishan
  * @since 08/07/16
  */
-public class BaseActivity extends AppCompatActivity implements BaseActivityCallback {
+public class BaseActivity extends AppCompatActivity implements BaseActivityCallback,
+        ForegroundChecker.Listener {
 
     protected Toolbar toolbar;
     private ActivityComponent activityComponent;
@@ -38,10 +43,16 @@ public class BaseActivity extends AppCompatActivity implements BaseActivityCallb
         }
     }
 
+    /**
+     * Used for removing elevation from toolbar
+     */
     public void hideToolbarElevation() {
         getSupportActionBar().setElevation(0);
     }
 
+    /**
+     * Used for setting toolbar elevation
+     */
     public void setToolbarElevation() {
         getSupportActionBar().setElevation(8f);
     }
@@ -51,6 +62,10 @@ public class BaseActivity extends AppCompatActivity implements BaseActivityCallb
         super.onCreate(savedInstanceState);
     }
 
+    /**
+     * Used for dependency injection
+     * @return {@link ActivityComponent} which is used for injection
+     */
     public ActivityComponent getActivityComponent() {
         if (activityComponent == null) {
             activityComponent = DaggerActivityComponent.builder()
@@ -106,10 +121,17 @@ public class BaseActivity extends AppCompatActivity implements BaseActivityCallb
         Toast.makeText(BaseActivity.this, message, toastType).show();
     }
 
+    /**
+     * Calls a method {@code showProgressDialog("Working")} which displays ProgressDialog
+     */
     public void showProgressDialog() {
         showProgressDialog(getString(R.string.working));
     }
 
+    /**
+     * Displays a ProgressDialog
+     * @param message Message you want to display in Progress Dialog
+     */
     @Override
     public void showProgressDialog(String message) {
         if (progress == null) {
@@ -121,6 +143,9 @@ public class BaseActivity extends AppCompatActivity implements BaseActivityCallb
 
     }
 
+    /**
+     * Hides the progress dialog if it is currently being shown
+     */
     @Override
     public void hideProgressDialog() {
         if (progress != null && progress.isShowing()) {
@@ -129,6 +154,10 @@ public class BaseActivity extends AppCompatActivity implements BaseActivityCallb
         }
     }
 
+    /**
+     * Used for setting title of Toolbar
+     * @param title String you want to display as title
+     */
     public void setActionBarTitle(String title) {
         if (getSupportActionBar() != null && getTitle() != null) {
             setTitle(title);
@@ -139,13 +168,40 @@ public class BaseActivity extends AppCompatActivity implements BaseActivityCallb
         setActionBarTitle(getResources().getString(title));
     }
 
+    /**
+     * @return Returns toolbar linked with current activity
+     */
     public Toolbar getToolbar() {
         return toolbar;
     }
 
+    /**
+     * Calls {@code setActionBarTitle()} to set Toolbar title
+     * @param title String you want to set as title
+     */
     @Override
     public void setToolbarTitle(String title) {
         setActionBarTitle(title);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ForegroundChecker.get().addListener(this);
+        ForegroundChecker.get().onActivityResumed();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        ForegroundChecker.get().onActivityPaused();
+    }
+
+    @Override
+    public void onBecameForeground() {
+        Intent intent = new Intent(this, PassCodeActivity.class);
+        intent.putExtra(Constants.INTIAL_LOGIN, false);
+        startActivity(intent);
     }
 
     /**
@@ -172,6 +228,9 @@ public class BaseActivity extends AppCompatActivity implements BaseActivityCallb
         }
     }
 
+    /**
+     * It pops all the fragments which are currently in the backStack
+     */
     public void clearFragmentBackStack() {
         FragmentManager fm = getSupportFragmentManager();
         int backStackCount = getSupportFragmentManager().getBackStackEntryCount();

@@ -2,6 +2,7 @@ package org.mifos.selfserviceapp.ui.fragments;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
@@ -124,11 +125,63 @@ public class AccountsFragment extends BaseFragment implements
         swipeRefreshLayout.setColorSchemeColors(getActivity()
                 .getResources().getIntArray(R.array.swipeRefreshColors));
         swipeRefreshLayout.setOnRefreshListener(this);
-        showProgress();
+        if (savedInstanceState == null) {
+            showProgress();
+        }
 
         return rootView;
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(Constants.ACCOUNT_TYPE, accountType);
+        switch (accountType) {
+            case Constants.SAVINGS_ACCOUNTS:
+                outState.putParcelableArrayList(Constants.SAVINGS_ACCOUNTS, new ArrayList
+                        <Parcelable>(savingAccounts));
+                break;
+            case Constants.LOAN_ACCOUNTS:
+                outState.putParcelableArrayList(Constants.LOAN_ACCOUNTS, new ArrayList
+                        <Parcelable>(loanAccounts));
+                break;
+            case Constants.SHARE_ACCOUNTS:
+                outState.putParcelableArrayList(Constants.SHARE_ACCOUNTS, new ArrayList
+                        <Parcelable>(shareAccounts));
+                break;
+        }
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+        if (savedInstanceState != null) {
+            accountType = savedInstanceState.getString(Constants.ACCOUNT_TYPE);
+            switch (accountType) {
+                case Constants.SAVINGS_ACCOUNTS:
+                    List<SavingAccount> savingAccountList = savedInstanceState.
+                            getParcelableArrayList(Constants.SAVINGS_ACCOUNTS);
+                    showSavingsAccounts(savingAccountList);
+                    break;
+                case Constants.LOAN_ACCOUNTS:
+                    List<LoanAccount> loanAccountList = savedInstanceState.getParcelableArrayList(
+                            Constants.LOAN_ACCOUNTS);
+                    showLoanAccounts(loanAccountList);
+                    break;
+                case Constants.SHARE_ACCOUNTS:
+                    List<ShareAccount> shareAccountList = savedInstanceState.getParcelableArrayList(
+                            Constants.SHARE_ACCOUNTS);
+                    showShareAccounts(shareAccountList);
+                    break;
+            }
+        }
+    }
+
+
+    /**
+     * Used for reloading account of a particular {@code accountType} in case of a network error.
+     */
     @OnClick(R.id.noAccountIcon)
     void reloadOnError() {
         ll_error.setVisibility(View.GONE);
@@ -136,6 +189,10 @@ public class AccountsFragment extends BaseFragment implements
         accountsPresenter.loadAccounts(accountType);
     }
 
+    /**
+     * This method is called when we swipe to refresh the view and is used for reloading account of
+     * a particular {@code accountType}
+     */
     @Override
     public void onRefresh() {
         ll_error.setVisibility(View.GONE);
@@ -143,6 +200,11 @@ public class AccountsFragment extends BaseFragment implements
         accountsPresenter.loadAccounts(accountType);
     }
 
+    /**
+     * Shows {@link List} of {@link LoanAccount} fetched from server using
+     * {@link LoanAccountsListAdapter}
+     * @param loanAccounts {@link List} of {@link LoanAccount}
+     */
     @Override
     public void showLoanAccounts(List<LoanAccount> loanAccounts) {
         Collections.sort(loanAccounts, new ComparatorBasedOnId());
@@ -155,6 +217,11 @@ public class AccountsFragment extends BaseFragment implements
         }
     }
 
+    /**
+     * Shows {@link List} of {@link SavingAccount} fetched from server using
+     * {@link SavingAccountsListAdapter}
+     * @param savingAccounts {@link List} of {@link SavingAccount}
+     */
     @Override
     public void showSavingsAccounts(List<SavingAccount> savingAccounts) {
         Collections.sort(savingAccounts, new ComparatorBasedOnId());
@@ -167,6 +234,11 @@ public class AccountsFragment extends BaseFragment implements
         }
     }
 
+    /**
+     * Shows {@link List} of {@link ShareAccount} fetched from server using
+     * {@link ShareAccountsListAdapter}
+     * @param shareAccounts {@link List} of {@link ShareAccount}
+     */
     @Override
     public void showShareAccounts(List<ShareAccount> shareAccounts) {
         Collections.sort(shareAccounts, new ComparatorBasedOnId());
@@ -180,6 +252,10 @@ public class AccountsFragment extends BaseFragment implements
     }
 
 
+    /**
+     * Shows an error layout when this function is called.
+     * @param emptyAccounts Text to show in {@code noAccountText}
+     */
     public void showEmptyAccounts(String emptyAccounts) {
         ll_error.setVisibility(View.VISIBLE);
         noAccountText.setText(emptyAccounts);
@@ -187,24 +263,41 @@ public class AccountsFragment extends BaseFragment implements
         rvAccounts.setVisibility(View.GONE);
     }
 
+    /**
+     * Used for searching an {@code input} String in {@code savingAccounts} and displaying it in the
+     * recyclerview.
+     * @param input String which is needs to be searched in list
+     */
     public void searchSavingsAccount(String input) {
         savingAccountsListAdapter.setSavingAccountsList(accountsPresenter.
                 searchInSavingsList(savingAccounts, input));
-        rvAccounts.setAdapter(savingAccountsListAdapter);
     }
 
+    /**
+     * Used for searching an {@code input} String in {@code loanAccounts} and displaying it in the
+     * recyclerview.
+     * @param input String which is needs to be searched in list
+     */
     public void searchLoanAccount(String input) {
         loanAccountsListAdapter.setLoanAccountsList(accountsPresenter.
                 searchInLoanList(loanAccounts, input));
-        rvAccounts.setAdapter(loanAccountsListAdapter);
     }
 
+    /**
+     * Used for searching an {@code input} String in {@code savingAccounts} and displaying it in the
+     * recyclerview.
+     * @param input String which is needs to be searched in list
+     */
     public void searchSharesAccount(String input) {
         shareAccountsListAdapter.setShareAccountsList(accountsPresenter.
                 searchInSharesList(shareAccounts, input));
-        rvAccounts.setAdapter(shareAccountsListAdapter);
     }
 
+    /**
+     * Used for filtering {@code savingAccounts} depending upon {@link List} of
+     * {@link CheckboxStatus}
+     * @param statusModelList {@link List} of {@link CheckboxStatus}
+     */
     public void filterSavingsAccount(List<CheckboxStatus> statusModelList) {
         List<SavingAccount> filteredSavings = new ArrayList<>();
         for (CheckboxStatus status : accountsPresenter.getCheckedStatus(statusModelList)) {
@@ -212,9 +305,13 @@ public class AccountsFragment extends BaseFragment implements
                     status));
         }
         savingAccountsListAdapter.setSavingAccountsList(filteredSavings);
-        rvAccounts.setAdapter(savingAccountsListAdapter);
     }
 
+    /**
+     * Used for filtering {@code loanAccounts} depending upon {@link List} of
+     * {@link CheckboxStatus}
+     * @param statusModelList {@link List} of {@link CheckboxStatus}
+     */
     public void filterLoanAccount(List<CheckboxStatus> statusModelList) {
         List<LoanAccount> filteredSavings = new ArrayList<>();
         for (CheckboxStatus status : accountsPresenter.getCheckedStatus(statusModelList)) {
@@ -222,9 +319,13 @@ public class AccountsFragment extends BaseFragment implements
                     status));
         }
         loanAccountsListAdapter.setLoanAccountsList(filteredSavings);
-        rvAccounts.setAdapter(loanAccountsListAdapter);
     }
 
+    /**
+     * Used for filtering {@code shareAccounts} depending upon {@link List} of
+     * {@link CheckboxStatus}
+     * @param statusModelList {@link List} of {@link CheckboxStatus}
+     */
     public void filterShareAccount(List<CheckboxStatus> statusModelList) {
         List<ShareAccount> filteredSavings = new ArrayList<>();
         for (CheckboxStatus status : accountsPresenter.getCheckedStatus(statusModelList)) {
@@ -232,9 +333,12 @@ public class AccountsFragment extends BaseFragment implements
                     status));
         }
         shareAccountsListAdapter.setShareAccountsList(filteredSavings);
-        rvAccounts.setAdapter(shareAccountsListAdapter);
     }
 
+    /**
+     * It is called whenever any error occurs while executing a request
+     * @param errorMessage Error message that tells the user about the problem.
+     */
     @Override
     public void showError(String errorMessage) {
         ll_error.setVisibility(View.VISIBLE);
@@ -244,11 +348,17 @@ public class AccountsFragment extends BaseFragment implements
         Toast.makeText(getActivity(), errorMessage, Toast.LENGTH_SHORT).show();
     }
 
+    /**
+     * Shows {@link SwipeRefreshLayout}
+     */
     @Override
     public void showProgress() {
         showSwipeRefreshLayout(true);
     }
 
+    /**
+     * Hides {@link SwipeRefreshLayout}
+     */
     @Override
     public void hideProgress() {
         showSwipeRefreshLayout(false);
@@ -275,11 +385,13 @@ public class AccountsFragment extends BaseFragment implements
         switch (accountType) {
             case Constants.SAVINGS_ACCOUNTS:
                 intent = new Intent(getActivity(), SavingsAccountContainerActivity.class);
-                intent.putExtra(Constants.SAVINGS_ID, savingAccounts.get(position).getId());
+                intent.putExtra(Constants.SAVINGS_ID, savingAccountsListAdapter.
+                        getSavingAccountsList().get(position).getId());
                 break;
             case Constants.LOAN_ACCOUNTS:
                 intent = new Intent(getActivity(), LoanAccountContainerActivity.class);
-                intent.putExtra(Constants.LOAN_ID, loanAccounts.get(position).getId());
+                intent.putExtra(Constants.LOAN_ID, loanAccountsListAdapter.getLoanAccountsList().
+                        get(position).getId());
                 break;
         }
         openActivity(intent);

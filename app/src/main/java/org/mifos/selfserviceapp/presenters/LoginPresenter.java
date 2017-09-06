@@ -105,7 +105,6 @@ public class LoginPresenter extends BasePresenter<LoginView> {
 
                         @Override
                         public void onNext(User user) {
-                            getMvpView().hideProgress();
                             if (user != null) {
                                 final String userName = user.getUserName();
                                 final long userID = user.getUserId();
@@ -113,6 +112,8 @@ public class LoginPresenter extends BasePresenter<LoginView> {
                                         user.getBase64EncodedAuthenticationKey();
                                 saveAuthenticationTokenForSession(userID, authToken);
                                 getMvpView().onLoginSuccess(userName);
+                            } else {
+                                getMvpView().hideProgress();
                             }
                         }
                     })
@@ -125,7 +126,6 @@ public class LoginPresenter extends BasePresenter<LoginView> {
      */
     public void loadClient() {
         checkViewAttached();
-        getMvpView().showProgress();
         subscriptions.add(dataManager.getClients()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
@@ -137,8 +137,16 @@ public class LoginPresenter extends BasePresenter<LoginView> {
 
                     @Override
                     public void onError(Throwable e) {
-                        getMvpView().showMessage(context.getString(R.string.error_fetching_client));
                         getMvpView().hideProgress();
+                        if (((HttpException) e).code() == 401) {
+                            getMvpView().showMessage(context.getString(R.string.
+                                    unauthorized_client));
+                        } else {
+                            getMvpView().showMessage(context.getString(R.string.
+                                    error_fetching_client));
+                        }
+                        preferencesHelper.clear();
+                        BaseApiManager.createService(preferencesHelper.getToken());
                     }
 
                     @Override
@@ -146,8 +154,10 @@ public class LoginPresenter extends BasePresenter<LoginView> {
                         getMvpView().hideProgress();
                         if (clientPage.getPageItems().size() != 0) {
                             long clientId = clientPage.getPageItems().get(0).getId();
-                            getMvpView().showClient(clientId);
                             preferencesHelper.setClientId(clientId);
+                            dataManager.setClientId(clientId);
+                            BaseApiManager.createService(preferencesHelper.getToken());
+                            getMvpView().showPassCodeActivity();
                         } else {
                             getMvpView().showMessage(context
                                     .getString(R.string.error_client_not_found));
@@ -163,23 +173,27 @@ public class LoginPresenter extends BasePresenter<LoginView> {
         final Resources resources = context.getResources();
         final String correctUsername = username.replaceFirst("\\s++$", "").trim();
         if (username == null || username.trim().isEmpty()) {
-            showEmptyInputError(context.getString(R.string.username));
+            getMvpView().showUsernameError(context.getString(R.string.error_validation_blank,
+                    context.getString(R.string.username)));
             return false;
         } else if (username.length() < 5) {
-            showMinimumInputLengthNotAchievedError(resources.getString(R.string.username),
-                    resources.getInteger(R.integer.username_minimum_length));
+            getMvpView().showUsernameError(context.getString(R.string.error_validation_minimum_chars
+                    , resources.getString(R.string.username), resources.getInteger(R.integer.
+                            username_minimum_length)));
             return false;
         } else if (correctUsername.contains(" ")) {
-            getMvpView().showMessage(context.getString(
+            getMvpView().showUsernameError(context.getString(
                     R.string.error_validation_cannot_contain_spaces,
                     correctUsername, context.getString(R.string.not_contain_username)));
             return false;
         } else if (password == null || password.trim().isEmpty()) {
-            showEmptyInputError(context.getString(R.string.password));
+            getMvpView().showPasswordError(context.getString(R.string.error_validation_blank,
+                    context.getString(R.string.password)));
             return false;
         } else if (password.length() < 6) {
-            showMinimumInputLengthNotAchievedError(resources.getString(R.string.password),
-                    resources.getInteger(R.integer.password_minimum_length));
+            getMvpView().showPasswordError(context.getString(R.string.error_validation_minimum_chars
+                    , resources.getString(R.string.password), resources.getInteger(R.integer.
+                            password_minimum_length)));
             return false;
         }
 
@@ -198,29 +212,6 @@ public class LoginPresenter extends BasePresenter<LoginView> {
         preferencesHelper.setUserId(userID);
         preferencesHelper.saveToken(authToken);
         BaseApiManager.createService(preferencesHelper.getToken());
-    }
-
-    /**
-     * Notifies the view about an empty input in the given field name.
-     *
-     * @param fieldName Field name of the input that was empty
-     */
-    private void showEmptyInputError(String fieldName) {
-        getMvpView().showMessage(context.getString(
-                R.string.error_validation_blank, fieldName));
-    }
-
-    /**
-     * Notifies the view that the user has not entered the minimum number of
-     * characters the input requires.
-     *
-     * @param fieldName     Field name of the input.
-     * @param minimumLength Minimum number of characters the field requires.
-     */
-    private void showMinimumInputLengthNotAchievedError(String fieldName, int minimumLength) {
-        getMvpView().showMessage(context.getString(
-                R.string.error_validation_minimum_chars,
-                fieldName, minimumLength));
     }
 
 }

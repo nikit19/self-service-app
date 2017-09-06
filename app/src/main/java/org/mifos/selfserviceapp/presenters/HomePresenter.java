@@ -2,12 +2,12 @@ package org.mifos.selfserviceapp.presenters;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.Base64;
 import android.util.Log;
 
 import org.mifos.selfserviceapp.R;
 import org.mifos.selfserviceapp.api.DataManager;
+import org.mifos.selfserviceapp.api.local.PreferencesHelper;
 import org.mifos.selfserviceapp.injection.ActivityContext;
 import org.mifos.selfserviceapp.models.accounts.loan.LoanAccount;
 import org.mifos.selfserviceapp.models.accounts.savings.SavingAccount;
@@ -15,6 +15,7 @@ import org.mifos.selfserviceapp.models.client.Client;
 import org.mifos.selfserviceapp.models.client.ClientAccounts;
 import org.mifos.selfserviceapp.presenters.base.BasePresenter;
 import org.mifos.selfserviceapp.ui.views.HomeView;
+import org.mifos.selfserviceapp.utils.ImageUtil;
 
 import java.io.IOException;
 import java.util.List;
@@ -35,7 +36,18 @@ public class HomePresenter extends BasePresenter<HomeView> {
 
     private DataManager dataManager;
     private CompositeSubscription subscription;
+    @Inject
+    PreferencesHelper preferencesHelper;
 
+    /**
+     * Initialises the LoginPresenter by automatically injecting an instance of
+     * {@link DataManager} and {@link Context}.
+     *
+     * @param dataManager DataManager class that provides access to the data
+     *                    via the API.
+     * @param context     Context of the view attached to the presenter. In this case
+     *                    it is that of an {@link android.support.v7.app.AppCompatActivity}
+     */
     @Inject
     public HomePresenter(DataManager dataManager, @ActivityContext Context context) {
         super(context);
@@ -54,6 +66,11 @@ public class HomePresenter extends BasePresenter<HomeView> {
         subscription.clear();
     }
 
+    /**
+     * Fetches Client account details as {@link ClientAccounts} from the server and notifies the
+     * view to display the {@link List} of {@link LoanAccount} and {@link SavingAccount}. And in
+     * case of any error during fetching the required details it notifies the view.
+     */
     public void loadClientAccountDetails() {
         checkViewAttached();
         getMvpView().showProgress();
@@ -84,6 +101,11 @@ public class HomePresenter extends BasePresenter<HomeView> {
         );
     }
 
+    /**
+     * Fetches Details about Client from the server as {@link Client} and notifies the view to
+     * display the details. And in case of any error during fetching the required details it
+     * notifies the view.
+     */
     public void getUserDetails() {
         checkViewAttached();
         subscription.add(dataManager.getCurrentClient()
@@ -104,6 +126,7 @@ public class HomePresenter extends BasePresenter<HomeView> {
                     @Override
                     public void onNext(Client client) {
                         if (client != null) {
+                            preferencesHelper.setOfficeName(client.getOfficeName());
                             getMvpView().showUserDetails(client);
                         } else {
                             getMvpView().showError(context
@@ -114,6 +137,10 @@ public class HomePresenter extends BasePresenter<HomeView> {
         );
     }
 
+    /**
+     * Fetches Client image from the server in {@link Base64} format which is then decoded into a
+     * {@link Bitmap} after which the view notified to display it.
+     */
     public void getUserImage() {
         checkViewAttached();
         subscription.add(dataManager.getClientImage()
@@ -142,10 +169,8 @@ public class HomePresenter extends BasePresenter<HomeView> {
                             final byte[] decodedBytes =
                                     Base64.decode(pureBase64Encoded, Base64.DEFAULT);
 
-                            Bitmap decodedBitmap =
-                                    BitmapFactory.decodeByteArray(decodedBytes, 0,
-                                            decodedBytes.length);
-
+                            Bitmap decodedBitmap = ImageUtil.getInstance().
+                                    compressImage(decodedBytes, 256, 256);
                             getMvpView().showUserImage(decodedBitmap);
                         } catch (IOException e) {
                             Log.d("userimage", e.toString());
@@ -155,6 +180,12 @@ public class HomePresenter extends BasePresenter<HomeView> {
         );
     }
 
+    /**
+     * Returns total Loan balance
+     * @param loanAccountList {@link List} of {@link LoanAccount} associated with the client
+     * @return Returns {@code totalAmount} which is calculated by adding all {@link LoanAccount}
+     * balance.
+     */
     private double getLoanAccountDetails(List<LoanAccount> loanAccountList) {
         double totalAmount = 0;
         for (LoanAccount loanAccount : loanAccountList) {
@@ -163,6 +194,12 @@ public class HomePresenter extends BasePresenter<HomeView> {
         return totalAmount;
     }
 
+    /**
+     * Returns total Savings balance
+     * @param savingAccountList {@link List} of {@link SavingAccount} associated with the client
+     * @return Returns {@code totalAmount} which is calculated by adding all {@link SavingAccount}
+     * balance.
+     */
     private double getSavingAccountDetails(List<SavingAccount> savingAccountList) {
         double totalAmount = 0;
         for (SavingAccount savingAccount : savingAccountList) {

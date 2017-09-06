@@ -13,18 +13,13 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.mifos.selfserviceapp.R;
 import org.mifos.selfserviceapp.models.accounts.loan.LoanAccount;
-import org.mifos.selfserviceapp.presenters.LoanAccountsDetailPresenter;
 import org.mifos.selfserviceapp.ui.activities.base.BaseActivity;
 import org.mifos.selfserviceapp.ui.fragments.base.BaseFragment;
-import org.mifos.selfserviceapp.ui.views.LoanAccountsDetailView;
 import org.mifos.selfserviceapp.utils.Constants;
-import org.mifos.selfserviceapp.utils.Toaster;
-
-import javax.inject.Inject;
+import org.mifos.selfserviceapp.utils.CurrencyUtil;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -33,7 +28,7 @@ import butterknife.ButterKnife;
  * Created by dilpreet on 25/2/17.
  */
 
-public class LoanAccountSummaryFragment extends BaseFragment implements LoanAccountsDetailView {
+public class LoanAccountSummaryFragment extends BaseFragment {
 
     @BindView(R.id.tv_loan_product_name)
     TextView tvLoanProductName;
@@ -92,18 +87,14 @@ public class LoanAccountSummaryFragment extends BaseFragment implements LoanAcco
     @BindView(R.id.iv_account_status)
     ImageView ivAccountStatus;
 
-
-    @Inject
-    LoanAccountsDetailPresenter loanAccountsDetailPresenter;
-
-    private long loanId;
+    private LoanAccount loanAccount;
 
     private View rootView;
 
-    public static LoanAccountSummaryFragment newInstance(long loanId) {
+    public static LoanAccountSummaryFragment newInstance(LoanAccount loanAccount) {
         LoanAccountSummaryFragment loanAccountSummaryFragment = new LoanAccountSummaryFragment();
         Bundle args = new Bundle();
-        args.putLong(Constants.LOAN_ID, loanId);
+        args.putParcelable(Constants.LOAN_ACCOUNT, loanAccount);
         loanAccountSummaryFragment.setArguments(args);
         return loanAccountSummaryFragment;
     }
@@ -113,7 +104,7 @@ public class LoanAccountSummaryFragment extends BaseFragment implements LoanAcco
         super.onCreate(savedInstanceState);
         ((BaseActivity) getActivity()).getActivityComponent().inject(this);
         if (getArguments() != null) {
-            loanId = getArguments().getLong(Constants.LOAN_ID);
+            loanAccount = getArguments().getParcelable(Constants.LOAN_ACCOUNT);
         }
     }
 
@@ -125,32 +116,40 @@ public class LoanAccountSummaryFragment extends BaseFragment implements LoanAcco
         setToolbarTitle(getString(R.string.loan_summary));
 
         ButterKnife.bind(this, rootView);
-        loanAccountsDetailPresenter.attachView(this);
 
-        loanAccountsDetailPresenter.loadLoanAccountDetails(loanId);
+        showLoanAccountsDetail(loanAccount);
 
         return rootView;
     }
 
-    @Override
+    /**
+     * Sets basic information about a Loan Account
+     * @param loanAccount object containing details of each loan account,
+     */
     public void showLoanAccountsDetail(LoanAccount loanAccount) {
         llLoanSummary.setVisibility(View.VISIBLE);
         tvLoanProductName.setText(loanAccount.getLoanProductName());
-        tvPrincipalName.setText(String.valueOf(loanAccount.getPrincipal()));
-        tvInterestChargedName.setText(String.
-                valueOf(loanAccount.getSummary().getInterestCharged()));
-        tvFeesName.setText(String.valueOf(loanAccount.getSummary().getFeeChargesCharged()));
-        tvPenaltiesName.setText(String.
-                valueOf(loanAccount.getSummary().getPenaltyChargesCharged()));
-        tvTotalRepaymentName.setText(String.
-                valueOf(loanAccount.getSummary().getTotalExpectedRepayment()));
-        tvTotalPaidName.setText(String.valueOf(loanAccount.getSummary().getTotalRepayment()));
-        tvInterestWaivedName.setText(String.valueOf(loanAccount.getSummary().getInterestWaived()));
-        tvPenaltiesWaivedName.setText(String.
-                valueOf(loanAccount.getSummary().getPenaltyChargesWaived()));
-        tvFeesWaivedName.setText(String.valueOf(loanAccount.getSummary().getFeeChargesWaived()));
-        tvOutstandingBalanceName.setText(String.
-                valueOf(loanAccount.getSummary().getTotalOutstanding()));
+        tvPrincipalName.setText(CurrencyUtil.formatCurrency(getActivity(),
+                loanAccount.getPrincipal()));
+        tvInterestChargedName.setText(CurrencyUtil.formatCurrency(getActivity(), loanAccount.
+                getSummary().getInterestCharged()));
+        tvFeesName.setText(CurrencyUtil.formatCurrency(getActivity(), loanAccount.getSummary().
+                getFeeChargesCharged()));
+        tvPenaltiesName.setText(CurrencyUtil.formatCurrency(getActivity(), loanAccount.getSummary().
+                getPenaltyChargesCharged()));
+        tvTotalRepaymentName.setText(CurrencyUtil.formatCurrency(getActivity(), loanAccount.
+                getSummary().getTotalExpectedRepayment()));
+        tvTotalPaidName.setText(CurrencyUtil.formatCurrency(getActivity(), loanAccount.getSummary().
+                getTotalRepayment()));
+        tvInterestWaivedName.setText(CurrencyUtil.formatCurrency(getActivity(), loanAccount.
+                getSummary().getInterestWaived()));
+        tvPenaltiesWaivedName.setText(CurrencyUtil.formatCurrency(getActivity(), loanAccount.
+                getSummary().getPenaltyChargesWaived()));
+        tvFeesWaivedName.setText(CurrencyUtil.formatCurrency(getActivity(), loanAccount.getSummary()
+                .getFeeChargesWaived()));
+        tvOutstandingBalanceName.setText(getResources().getString(R.string.string_and_string,
+                loanAccount.getSummary().getCurrency().getDisplaySymbol(), CurrencyUtil.
+                formatCurrency(getActivity(), loanAccount.getSummary().getTotalOutstanding())));
         tvLoanAccountNumber.setText(loanAccount.getAccountNo());
         if (loanAccount.getLoanPurposeName() != null) {
             llLoanPurpose.setVisibility(View.VISIBLE);
@@ -168,27 +167,9 @@ public class LoanAccountSummaryFragment extends BaseFragment implements LoanAcco
     }
 
     @Override
-    public void showErrorFetchingLoanAccountsDetail(String message) {
-        Toaster.show(rootView, message, Toast.LENGTH_SHORT);
-        layoutError.setVisibility(View.VISIBLE);
-        tvStatus.setText(message);
-    }
-
-    @Override
-    public void showProgress() {
-        showProgressBar();
-    }
-
-    @Override
-    public void hideProgress() {
-        hideProgressBar();
-    }
-
-    @Override
     public void onDestroyView() {
         super.onDestroyView();
         hideProgressBar();
-        loanAccountsDetailPresenter.detachView();
     }
 
 

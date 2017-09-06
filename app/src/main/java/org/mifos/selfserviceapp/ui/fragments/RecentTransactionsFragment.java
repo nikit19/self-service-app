@@ -1,6 +1,7 @@
 package org.mifos.selfserviceapp.ui.fragments;
 
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -19,6 +20,7 @@ import org.mifos.selfserviceapp.ui.activities.base.BaseActivity;
 import org.mifos.selfserviceapp.ui.adapters.RecentTransactionListAdapter;
 import org.mifos.selfserviceapp.ui.views.RecentTransactionsView;
 import org.mifos.selfserviceapp.utils.Constants;
+import org.mifos.selfserviceapp.utils.DividerItemDecoration;
 import org.mifos.selfserviceapp.utils.EndlessRecyclerViewScrollListener;
 import org.mifos.selfserviceapp.utils.Toaster;
 
@@ -63,11 +65,8 @@ public class RecentTransactionsFragment extends Fragment implements RecentTransa
     private List<Transaction> recentTransactionList;
 
 
-    public static RecentTransactionsFragment newInstance(long clientId) {
+    public static RecentTransactionsFragment newInstance() {
         RecentTransactionsFragment recentTransactionsFragment = new RecentTransactionsFragment();
-        Bundle args = new Bundle();
-        args.putLong(Constants.CLIENT_ID, clientId);
-        recentTransactionsFragment.setArguments(args);
         return recentTransactionsFragment;
     }
 
@@ -87,17 +86,40 @@ public class RecentTransactionsFragment extends Fragment implements RecentTransa
         recentTransactionsPresenter.attachView(this);
 
         showUserInterface();
-        recentTransactionsPresenter.loadRecentTransactions(false, 0);
-
+        if (savedInstanceState == null) {
+            recentTransactionsPresenter.loadRecentTransactions(false, 0);
+        }
         return rootView;
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList(Constants.RECENT_TRANSACTIONS, new ArrayList<Parcelable>(
+                recentTransactionList));
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if (savedInstanceState != null) {
+            List<Transaction> transactions = savedInstanceState.getParcelableArrayList(Constants.
+                    RECENT_TRANSACTIONS);
+            showRecentTransactions(transactions);
+        }
+    }
+
+    /**
+     * Setting up {@code rvRecentTransactions}
+     */
     @Override
     public void showUserInterface() {
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
         layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         rvRecentTransactions.setLayoutManager(layoutManager);
         rvRecentTransactions.setHasFixedSize(true);
+        rvRecentTransactions.addItemDecoration(new DividerItemDecoration(getActivity(),
+                layoutManager.getOrientation()));
         recentTransactionsListAdapter.setTransactions(recentTransactionList);
         rvRecentTransactions.setAdapter(recentTransactionsListAdapter);
         rvRecentTransactions.addOnScrollListener(
@@ -112,6 +134,9 @@ public class RecentTransactionsFragment extends Fragment implements RecentTransa
         swipeTransactionContainer.setOnRefreshListener(this);
     }
 
+    /**
+     * Refreshes the List of {@link Transaction}
+     */
     @Override
     public void onRefresh() {
         resetUI();
@@ -123,11 +148,21 @@ public class RecentTransactionsFragment extends Fragment implements RecentTransa
         Toaster.show(rootView, message, Toaster.LONG);
     }
 
+    /**
+     * Updates {@code recentTransactionsListAdapter} with {@code recentTransactionList} fetched from
+     * server
+     * @param recentTransactionList List of {@link Transaction}
+     */
     @Override
     public void showRecentTransactions(List<Transaction> recentTransactionList) {
+        this.recentTransactionList = recentTransactionList;
         recentTransactionsListAdapter.setTransactions(recentTransactionList);
     }
 
+    /**
+     * Appends more Transactions in {@code recentTransactionList}
+     * @param transactions List of {@link Transaction}
+     */
     @Override
     public void showLoadMoreRecentTransactions(List<Transaction> transactions) {
         this.recentTransactionList.addAll(recentTransactionList);
@@ -140,6 +175,9 @@ public class RecentTransactionsFragment extends Fragment implements RecentTransa
         layoutError.setVisibility(View.GONE);
     }
 
+    /**
+     * Hides {@code rvRecentTransactions} and shows a textview prompting no transactions
+     */
     @Override
     public void showEmptyTransaction() {
         rvRecentTransactions.setVisibility(View.GONE);
@@ -147,6 +185,10 @@ public class RecentTransactionsFragment extends Fragment implements RecentTransa
         tvStatus.setText(getString(R.string.empty_transactions));
     }
 
+    /**
+     * It is called whenever any error occurs while executing a request
+     * @param message Error message that tells the user about the problem.
+     */
     @Override
     public void showErrorFetchingRecentTransactions(String message) {
         showMessage(message);

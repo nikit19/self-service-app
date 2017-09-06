@@ -60,11 +60,6 @@ public class LoginPresenterTest {
         user = FakeRemoteDataSource.getUser();
         clientPage = FakeRemoteDataSource.getClients();
         noClientPage = FakeRemoteDataSource.getNoClients();
-
-        when(context.getString(R.string.error_fetching_client)).
-                thenReturn("Failed to fetch Client");
-        when(context.getString(R.string.error_client_not_found)).
-                thenReturn("Client Not Found");
     }
 
     @Test
@@ -74,7 +69,6 @@ public class LoginPresenterTest {
         presenter.login("selfservice", "password");
 
         verify(view).showProgress();
-        verify(view).hideProgress();
         verify(view).onLoginSuccess(user.getUserName());
     }
 
@@ -85,9 +79,8 @@ public class LoginPresenterTest {
 
         presenter.loadClient();
 
-        verify(view).showProgress();
         verify(view).hideProgress();
-        verify(view).showClient(clientId);
+        verify(view).showPassCodeActivity();
         verify(view, never()).showMessage(context.getString(R.string.error_fetching_client));
     }
 
@@ -98,26 +91,34 @@ public class LoginPresenterTest {
 
         presenter.loadClient();
 
-        verify(view).showProgress();
         verify(view).hideProgress();
         verify(view).showMessage(context.getString(R.string.error_client_not_found));
-        verify(view, never()).showClient(clientId);
+        verify(view, never()).showPassCodeActivity();
     }
 
     @Test
     public void testLoadClientFails() throws Exception {
-        long clientId = clientPage.getPageItems().get(0).getId();
-        when(dataManager.getClients()).thenReturn(Observable.<Page<Client>>error(new
-                RuntimeException()));
+        when(dataManager.getClients()).thenReturn(Observable.<Page<Client>>error(RetrofitUtils.
+                get404Exception()));
 
         presenter.loadClient();
 
-        verify(view).showProgress();
         verify(view).hideProgress();
         verify(view).showMessage(context.getString(R.string.error_fetching_client));
-        verify(view, never()).showClient(clientId);
+        verify(view, never()).showPassCodeActivity();
     }
 
+    @Test
+    public void testLoadClientUnauthorized() throws Exception {
+        when(dataManager.getClients()).thenReturn(Observable.<Page<Client>>error(RetrofitUtils.
+                get401Exception()));
+
+        presenter.loadClient();
+
+        verify(view).hideProgress();
+        verify(view).showMessage(context.getString(R.string.unauthorized_client));
+        verify(view, never()).showPassCodeActivity();
+    }
     @After
     public void tearDown() throws Exception {
         presenter.detachView();

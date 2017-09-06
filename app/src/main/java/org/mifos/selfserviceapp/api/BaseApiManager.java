@@ -6,11 +6,10 @@ import org.mifos.selfserviceapp.api.services.ClientChargeService;
 import org.mifos.selfserviceapp.api.services.ClientService;
 import org.mifos.selfserviceapp.api.services.LoanAccountsListService;
 import org.mifos.selfserviceapp.api.services.RecentTransactionsService;
+import org.mifos.selfserviceapp.api.services.RegistrationService;
 import org.mifos.selfserviceapp.api.services.SavingAccountsListService;
 import org.mifos.selfserviceapp.api.services.ThirdPartyTransferService;
 
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -34,6 +33,7 @@ public class BaseApiManager {
     private static ClientChargeService clientChargeApi;
     private static BeneficiaryService beneficiaryApi;
     private static ThirdPartyTransferService thirdPartyTransferApi;
+    private static RegistrationService registrationApi;
     public BaseApiManager() {
         String authToken = "";
         createService(authToken);
@@ -48,6 +48,7 @@ public class BaseApiManager {
         clientChargeApi = createApi(ClientChargeService.class);
         beneficiaryApi = createApi(BeneficiaryService.class);
         thirdPartyTransferApi = createApi(ThirdPartyTransferService.class);
+        registrationApi = createApi(RegistrationService.class);
     }
 
     private static <T> T createApi(Class<T> clazz) {
@@ -56,19 +57,11 @@ public class BaseApiManager {
 
     public static void createService(String authToken) {
 
-        HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
-        interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
-
-        OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                .addInterceptor(interceptor)
-                .addInterceptor(new SelfServiceInterceptor(authToken))
-                .build();
-
         retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-                .client(okHttpClient)
+                .client(new SelfServiceOkHttpClient(authToken).getMifosOkHttpClient())
                 .build();
         init();
     }
@@ -103,5 +96,9 @@ public class BaseApiManager {
 
     public ThirdPartyTransferService getThirdPartyTransferApi() {
         return thirdPartyTransferApi;
+    }
+
+    public RegistrationService getRegistrationApi() {
+        return registrationApi;
     }
 }

@@ -15,17 +15,21 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.mifos.selfserviceapp.R;
+import org.mifos.selfserviceapp.api.local.PreferencesHelper;
 import org.mifos.selfserviceapp.models.accounts.loan.LoanAccount;
 import org.mifos.selfserviceapp.presenters.LoanAccountsDetailPresenter;
 import org.mifos.selfserviceapp.ui.activities.base.BaseActivity;
+import org.mifos.selfserviceapp.ui.enums.AccountType;
+import org.mifos.selfserviceapp.ui.enums.ChargeType;
 import org.mifos.selfserviceapp.ui.enums.LoanState;
 import org.mifos.selfserviceapp.ui.fragments.base.BaseFragment;
 import org.mifos.selfserviceapp.ui.views.LoanAccountsDetailView;
 import org.mifos.selfserviceapp.utils.Constants;
+import org.mifos.selfserviceapp.utils.CurrencyUtil;
 import org.mifos.selfserviceapp.utils.DateHelper;
+import org.mifos.selfserviceapp.utils.QrCodeGenerator;
 import org.mifos.selfserviceapp.utils.Toaster;
 
 import javax.inject.Inject;
@@ -74,6 +78,10 @@ public class LoanAccountsDetailFragment extends BaseFragment implements LoanAcco
     @BindView(R.id.btn_make_payment)
     Button btMakePayment;
 
+    @Inject
+    PreferencesHelper preferencesHelper;
+
+
     private LoanAccount loanAccount;
     private boolean showLoanUpdateOption = false;
     private long loanId;
@@ -108,11 +116,34 @@ public class LoanAccountsDetailFragment extends BaseFragment implements LoanAcco
 
         ButterKnife.bind(this, rootView);
         mLoanAccountDetailsPresenter.attachView(this);
-        mLoanAccountDetailsPresenter.loadLoanAccountDetails(loanId);
+        if (savedInstanceState == null) {
+            mLoanAccountDetailsPresenter.loadLoanAccountDetails(loanId);
+        }
 
         return rootView;
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(Constants.LOAN_ACCOUNT, loanAccount);
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if (savedInstanceState != null) {
+            showLoanAccountsDetail((LoanAccount) savedInstanceState.
+                    getParcelable(Constants.LOAN_ACCOUNT));
+        }
+    }
+
+
+    /**
+     * Shows details about loan account fetched from server is status is Active else shows and
+     * error layout i.e. {@code layoutError} with a msg related to the status.
+     * @param loanAccount object containing details of each loan account,
+     */
     @Override
     public void showLoanAccountsDetail(LoanAccount loanAccount) {
         llAccountDetail.setVisibility(View.VISIBLE);
@@ -139,12 +170,15 @@ public class LoanAccountsDetailFragment extends BaseFragment implements LoanAcco
         getActivity().invalidateOptionsMenu();
     }
 
+    /**
+     * Sets basic information about a loan
+     * @param loanAccount object containing details of each loan account,
+     */
     public void showDetails(LoanAccount loanAccount) {
         //TODO: Calculate nextInstallment value
-        tvOutstandingBalanceName.setText(getResources()
-                .getString(R.string.outstanding_balance_str,
-                        loanAccount.getSummary().getCurrency().getDisplaySymbol(),
-                        String.valueOf(loanAccount.getSummary().getTotalOutstanding())));
+        tvOutstandingBalanceName.setText(getResources().getString(R.string.string_and_string,
+                loanAccount.getSummary().getCurrency().getDisplaySymbol(), CurrencyUtil.
+                formatCurrency(getActivity(), loanAccount.getSummary().getTotalOutstanding())));
         tvNextInstallmentName.setText(String.valueOf(
                 loanAccount.getSummary().getTotalOutstanding()));
         tvAccountNumberName.setText(loanAccount.getAccountNo());
@@ -152,29 +186,61 @@ public class LoanAccountsDetailFragment extends BaseFragment implements LoanAcco
         tvCurrencyName.setText(loanAccount.getSummary().getCurrency().getCode());
     }
 
+    /**
+     * Opens {@link SavingsMakeTransferFragment} to Make a payment for loan account with given
+     * {@code loanId}
+     */
     @OnClick(R.id.btn_make_payment)
     public void onMakePaymentClicked() {
-        Toast.makeText(getActivity(), "clicked", Toast.LENGTH_SHORT).show();
+        ((BaseActivity) getActivity()).replaceFragment(SavingsMakeTransferFragment
+                .newInstance(loanId, Constants.TRANSFER_PAY_TO), true, R.id.container);
     }
 
-    @OnClick(R.id.btn_loan_summary)
+    /**
+     * Opens {@link LoanAccountSummaryFragment}
+     */
+    @OnClick(R.id.ll_summary)
     public void onLoanSummaryClicked() {
         ((BaseActivity) getActivity()).replaceFragment(LoanAccountSummaryFragment
-                .newInstance(loanId), true, R.id.container);
+                .newInstance(loanAccount), true, R.id.container);
     }
 
-    @OnClick(R.id.btn_repayment_schedule)
+    /**
+     * Opens {@link LoanRepaymentScheduleFragment}
+     */
+    @OnClick(R.id.ll_repayment)
     public void onRepaymentScheduleClicked() {
         ((BaseActivity) getActivity()).replaceFragment(LoanRepaymentScheduleFragment
                 .newInstance(loanId), true, R.id.container);
     }
 
-    @OnClick(R.id.btn_transactions)
+    /**
+     * Opens {@link LoanAccountTransactionFragment}
+     */
+    @OnClick(R.id.ll_loan_transactions)
     public void onTransactionsClicked() {
         ((BaseActivity) getActivity()).replaceFragment(LoanAccountTransactionFragment
                 .newInstance(loanId), true, R.id.container);
     }
 
+    @OnClick(R.id.ll_loan_charges)
+    public void chargesClicked() {
+        ((BaseActivity) getActivity()).replaceFragment(ClientChargeFragment
+                .newInstance(loanAccount.getId(), ChargeType.LOAN), true, R.id.container);
+    }
+
+    @OnClick(R.id.ll_loan_qr_code)
+    public void onQrCodeClicked() {
+        String accountDetailsInJson = QrCodeGenerator.getAccountDetailsInString(loanAccount.
+                getAccountNo(), preferencesHelper.getOfficeName(), AccountType.LOAN);
+        ((BaseActivity) getActivity()).replaceFragment(QrCodeDisplayFragment.
+                newInstance(accountDetailsInJson), true, R.id.container);
+    }
+
+    /**
+     * It is called whenever any error occurs while executing a request
+     * @param message Error message that tells the user about the problem.
+     */
     @Override
     public void showErrorFetchingLoanAccountsDetail(String message) {
         llAccountDetail.setVisibility(View.GONE);

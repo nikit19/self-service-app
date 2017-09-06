@@ -1,13 +1,20 @@
 package org.mifos.selfserviceapp.utils;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
+import android.net.Uri;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
+import android.util.Log;
 
 import org.mifos.selfserviceapp.R;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.DateFormatSymbols;
 
 /**
@@ -26,6 +33,26 @@ public class Utils {
         return ld;
     }
 
+
+    public static Uri getImageUri(Context context, Bitmap bitmap) {
+        try {
+
+            File cachePath = new File(context.getCacheDir(), "images");
+            cachePath.mkdirs();
+            FileOutputStream stream = new FileOutputStream(cachePath + "/image.png");
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+            stream.close();
+        } catch (IOException e) {
+            Log.d(Utils.class.getName(), e.toString());
+        }
+
+        File imagePath = new File(context.getCacheDir(), "images");
+        File newFile = new File(imagePath, "image.png");
+
+        return FileProvider.getUriForFile(context, "org.mifos.selfserviceapp.fileprovider",
+                newFile);
+    }
+
     public static String generateFormString(String[][] data) {
         StringBuilder formString = new StringBuilder();
         formString.setLength(0);
@@ -33,5 +60,14 @@ public class Utils {
             formString.append(aData[0]).append(" : ").append(aData[1]).append('\n');
         }
         return formString.toString();
+    }
+
+    public static String formatTransactionType(String type) {
+        StringBuilder builder = new StringBuilder();
+        for (String str : type.toLowerCase().split("_")) {
+            builder.append(String.valueOf(str.charAt(0)).toUpperCase() + str.substring(1,
+                    str.length()) + " ");
+        }
+        return builder.toString();
     }
 }

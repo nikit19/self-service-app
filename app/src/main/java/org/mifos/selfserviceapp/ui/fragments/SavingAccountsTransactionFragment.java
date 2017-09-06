@@ -8,8 +8,6 @@ import android.support.v4.app.DialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -79,6 +77,7 @@ public class SavingAccountsTransactionFragment extends BaseFragment
     private long savingsId;
     private long startDateFromPicker , endDateFromPicker;
     private List<Transactions> transactionsList, dummyTransactionList;
+    private SavingsWithAssociations savingsWithAssociations;
     private DatePick datePick;
     private DialogFragment mfDatePicker;
 
@@ -98,7 +97,6 @@ public class SavingAccountsTransactionFragment extends BaseFragment
         if (getArguments() != null) {
             savingsId = getArguments().getLong(Constants.SAVINGS_ID);
         }
-        setHasOptionsMenu(true);
     }
 
     @Nullable
@@ -112,16 +110,30 @@ public class SavingAccountsTransactionFragment extends BaseFragment
         savingAccountsTransactionPresenter.attachView(this);
 
         showUserInterface();
-        savingAccountsTransactionPresenter.loadSavingsWithAssociations(savingsId);
-
+        if (savedInstanceState == null) {
+            savingAccountsTransactionPresenter.loadSavingsWithAssociations(savingsId);
+        }
         return rootView;
     }
 
     @Override
-    public void onPrepareOptionsMenu(Menu menu) {
-        MenuItem item = menu.findItem(R.id.item_transactions);
-        item.setVisible(false);
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(Constants.SAVINGS_ACCOUNTS, savingsWithAssociations);
     }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if (savedInstanceState != null) {
+            showSavingAccountsDetail((SavingsWithAssociations) savedInstanceState.
+                    getParcelable(Constants.SAVINGS_ACCOUNTS));
+        }
+    }
+
+    /**
+     * Setting up basic components
+     */
     @Override
     public void showUserInterface() {
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
@@ -134,11 +146,16 @@ public class SavingAccountsTransactionFragment extends BaseFragment
         mfDatePicker = MFDatePicker.newInsance(this);
     }
 
+    /**
+     * Provides with {@code savingsWithAssociations} fetched from server which is used to update the
+     * {@code transactionListAdapter}
+     * @param savingsWithAssociations Contains {@link Transactions} for given Savings account.
+     */
     @Override
     public void showSavingAccountsDetail(SavingsWithAssociations
                                                      savingsWithAssociations) {
         layoutAccount.setVisibility(View.VISIBLE);
-
+        this.savingsWithAssociations = savingsWithAssociations;
         transactionsList = savingsWithAssociations.getTransactions();
         transactionListAdapter.setContext(getContext());
         transactionListAdapter.
@@ -146,6 +163,10 @@ public class SavingAccountsTransactionFragment extends BaseFragment
 
     }
 
+    /**
+     * It is called whenever any error occurs while executing a request
+     * @param message Error message that tells the user about the problem.
+     */
     @Override
     public void showErrorFetchingSavingAccountsDetail(String message) {
         layoutAccount.setVisibility(View.GONE);
@@ -153,12 +174,20 @@ public class SavingAccountsTransactionFragment extends BaseFragment
         tvStatus.setText(message);
     }
 
+    /**
+     * Provides with a filtered list according to the constraints used in {@code filter()} function
+     * @param list
+     */
     @Override
     public void showFilteredList(List<Transactions> list) {
         Toaster.show(rootView, getString(R.string.filterd));
         transactionListAdapter.
                 setSavingAccountsTransactionList(list);
     }
+
+    /**
+     * Opens up Phone Dialer
+     */
     @OnClick(R.id.tv_help_line_number)
     void dialHelpLineNumber() {
         Intent intent = new Intent(Intent.ACTION_DIAL);
@@ -166,6 +195,9 @@ public class SavingAccountsTransactionFragment extends BaseFragment
         startActivity(intent);
     }
 
+    /**
+     * Shows a {@link DialogFragment} for selecting a starting Date
+     */
     @OnClick(R.id.tv_start_date)
     public void startDatePick() {
         datePick = DatePick.START;
@@ -173,6 +205,9 @@ public class SavingAccountsTransactionFragment extends BaseFragment
                 .DFRAG_DATE_PICKER);
     }
 
+    /**
+     * Shows a {@link DialogFragment} for selecting an ending Date
+     */
     @OnClick(R.id.tv_end_date)
     public void endDatePick() {
         datePick = DatePick.END;
@@ -180,6 +215,11 @@ public class SavingAccountsTransactionFragment extends BaseFragment
                 .DFRAG_DATE_PICKER);
     }
 
+    /**
+     * A CallBack for {@link MFDatePicker} which provides us with the date selected from the
+     * {@link android.app.DatePickerDialog} by {@code mfDatePicker}
+     * @param date Date selected by user in {@link String}
+     */
     @Override
     public void onDatePicked(String date) {
         long timeInMillis = DateHelper.getDateAsLongFromString(date, "dd-MM-yyyy");
@@ -193,20 +233,37 @@ public class SavingAccountsTransactionFragment extends BaseFragment
         }
     }
 
+    /**
+     * Filters the {@code transactionsList} according to the {@code startDateFromPicker} and
+     * {@code endDateFromPicker} chosen.
+     */
     @OnClick(R.id.btn_custom_filter)
     public void datePickerFilter() {
         String startDateText = getContext().getResources().getString(R.string.start_date);
         String endDateText = getContext().getResources().getString(R.string.end_date);
 
-        if (!tvStartDate.getText().equals(startDateText) &&
+        if (!tvStartDate.getText().equals(startDateText) && isEndDateLargeThanStartDate() &&
                 !tvEndDate.getText().equals(endDateText)) {
             filter(startDateFromPicker, endDateFromPicker);
+        } else if (!isEndDateLargeThanStartDate()) {
+            Toaster.show(rootView, getString(R.string.end_date_must_be_greater));
         } else {
             Toast.makeText(getContext(), getResources().getText(R.string.select_date),
                     Toast.LENGTH_SHORT).show();
         }
     }
 
+    /**
+     * Checks if {@code startDateFromPicker} is less than {@code endDateFromPicker}
+     * @return Returns true if {@code startDateFromPicker} is less than {@code endDateFromPicker}
+     */
+    private boolean isEndDateLargeThanStartDate() {
+        return startDateFromPicker <= endDateFromPicker;
+    }
+
+    /**
+     * Removes all filters applied to {@code transactionList}
+     */
     @OnClick(R.id.btn_all)
     public void resetFilter() {
         radioGroup.clearCheck();
@@ -245,6 +302,11 @@ public class SavingAccountsTransactionFragment extends BaseFragment
 
     }
 
+    /**
+     * Will filter {@code transactionsList} according to {@code startDate} and {@code endDate}
+     * @param startDate Starting date
+     * @param endDate Ending date
+     */
     private void filter(long startDate , long endDate) {
 
         dummyTransactionList = new ArrayList<>(transactionsList);

@@ -60,6 +60,7 @@ public class LoanAccountTransactionFragment extends BaseFragment
 
     private long loanId;
     private View rootView;
+    private LoanWithAssociations loanWithAssociations;
 
     public static LoanAccountTransactionFragment newInstance(long loanId) {
         LoanAccountTransactionFragment fragment = new LoanAccountTransactionFragment();
@@ -90,11 +91,30 @@ public class LoanAccountTransactionFragment extends BaseFragment
         loanAccountsTransactionPresenter.attachView(this);
 
         showUserInterface();
-        loanAccountsTransactionPresenter.loadLoanAccountDetails(loanId);
-
+        if (savedInstanceState == null) {
+            loanAccountsTransactionPresenter.loadLoanAccountDetails(loanId);
+        }
         return rootView;
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(Constants.LOAN_ACCOUNT, loanWithAssociations);
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if (savedInstanceState != null) {
+            showLoanTransactions((LoanWithAssociations) savedInstanceState.
+                    getParcelable(Constants.LOAN_ACCOUNT));
+        }
+    }
+
+    /**
+     * Initialized {@link RecyclerView} {@code rvLoanTransactions}
+     */
     @Override
     public void showUserInterface() {
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
@@ -104,19 +124,33 @@ public class LoanAccountTransactionFragment extends BaseFragment
         rvLoanTransactions.setAdapter(transactionsListAdapter);
     }
 
+    /**
+     * Fetches {@code loanWithAssociations} from server and intializes it in
+     * {@code transactionsListAdapter}
+     * @param loanWithAssociations object containing details about a Loan Account with Associations
+     */
     @Override
     public void showLoanTransactions(LoanWithAssociations loanWithAssociations) {
+        this.loanWithAssociations = loanWithAssociations;
         llLoanAccountTrans.setVisibility(View.VISIBLE);
         tvLoanProductName.setText(loanWithAssociations.getLoanProductName());
         transactionsListAdapter.setTransactions(loanWithAssociations.getTransactions());
     }
 
+    /**
+     * Sets a {@link TextView} with a msg if Transactions list is empty
+     * @param loanWithAssociations
+     */
     @Override
     public void showEmptyTransactions(LoanWithAssociations loanWithAssociations) {
         layoutError.setVisibility(View.VISIBLE);
         tvStatus.setText(R.string.empty_transactions);
     }
 
+    /**
+     * It is called whenever any error occurs while executing a request
+     * @param message Error message that tells the user about the problem.
+     */
     @Override
     public void showErrorFetchingLoanAccountsDetail(String message) {
         Toaster.show(rootView, message, Toast.LENGTH_SHORT);

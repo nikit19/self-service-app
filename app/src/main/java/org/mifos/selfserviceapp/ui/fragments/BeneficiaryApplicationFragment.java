@@ -2,12 +2,12 @@ package org.mifos.selfserviceapp.ui.fragments;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.design.widget.TextInputLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 
@@ -47,17 +47,17 @@ public class BeneficiaryApplicationFragment extends BaseFragment implements
     @BindView(R.id.ll_application_beneficiary)
     LinearLayout llApplicationBeneficiary;
 
-    @BindView(R.id.et_account_number)
-    EditText etAccountNumber;
+    @BindView(R.id.til_account_number)
+    TextInputLayout tilAccountNumber;
 
-    @BindView(R.id.et_office_name)
-    EditText etOfficeName;
+    @BindView(R.id.til_office_name)
+    TextInputLayout tilOfficeName;
 
-    @BindView(R.id.et_transfer_limit)
-    EditText etTransferLimit;
+    @BindView(R.id.til_transfer_limit)
+    TextInputLayout tilTransferLimit;
 
-    @BindView(R.id.et_beneficiary_name)
-    EditText etBeneficiaryName;
+    @BindView(R.id.til_beneficiary_name)
+    TextInputLayout tilBeneficiaryName;
 
     @Inject
     BeneficiaryApplicationPresenter presenter;
@@ -93,6 +93,9 @@ public class BeneficiaryApplicationFragment extends BaseFragment implements
             if (beneficiaryState == BeneficiaryState.UPDATE) {
                 beneficiary = getArguments().getParcelable(Constants.BENEFICIARY);
                 setToolbarTitle(getString(R.string.update_beneficiary));
+            } else if (beneficiaryState == BeneficiaryState.CREATE_QR) {
+                beneficiary = getArguments().getParcelable(Constants.BENEFICIARY);
+                setToolbarTitle(getString(R.string.add_beneficiary));
             } else {
                 setToolbarTitle(getString(R.string.add_beneficiary));
             }
@@ -109,20 +112,45 @@ public class BeneficiaryApplicationFragment extends BaseFragment implements
         showUserInterface();
 
         presenter.attachView(this);
-        presenter.showBeneficiaryTemplate();
-
+        if (savedInstanceState == null) {
+            presenter.loadBeneficiaryTemplate();
+        }
         return rootView;
     }
 
     @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(Constants.TEMPLATE, beneficiaryTemplate);
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if (savedInstanceState != null) {
+            showBeneficiaryTemplate((BeneficiaryTemplate) savedInstanceState.
+                    getParcelable(Constants.TEMPLATE));
+        }
+    }
+
+    /**
+     * Setting up {@code accountTypeAdapter} and {@code} spAccountType
+     */
+    @Override
     public void showUserInterface() {
         accountTypeAdapter = new ArrayAdapter<String>(getActivity(),
-                android.R.layout.simple_expandable_list_item_1, listAccountType);
+                android.R.layout.simple_spinner_item, listAccountType);
         accountTypeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spAccountType.setOnItemSelectedListener(this);
         spAccountType.setAdapter(accountTypeAdapter);
     }
 
+    /**
+     * Fetches {@link BeneficiaryTemplate} from server and further updates the UI according to
+     * {@link BeneficiaryState} which is initialized in {@code newInstance()} as
+     * {@code beneficiaryState}
+     * @param beneficiaryTemplate {@link BeneficiaryTemplate} fetched from server
+     */
     @Override
     public void showBeneficiaryTemplate(BeneficiaryTemplate beneficiaryTemplate) {
         this.beneficiaryTemplate = beneficiaryTemplate;
@@ -135,34 +163,56 @@ public class BeneficiaryApplicationFragment extends BaseFragment implements
             spAccountType.setSelection(accountTypeAdapter.getPosition(beneficiary
                     .getAccountType().getValue()));
             spAccountType.setEnabled(false);
-            etAccountNumber.setText(beneficiary.getAccountNumber());
-            etAccountNumber.setEnabled(false);
-            etOfficeName.setText(beneficiary.getOfficeName());
-            etOfficeName.setEnabled(false);
+            tilAccountNumber.getEditText().setText(beneficiary.getAccountNumber());
+            tilAccountNumber.setEnabled(false);
+            tilOfficeName.getEditText().setText(beneficiary.getOfficeName());
+            tilOfficeName.setEnabled(false);
 
-            etBeneficiaryName.setText(beneficiary.getName());
-            etTransferLimit.setText(String.valueOf(beneficiary.getTransferLimit()));
+            tilBeneficiaryName.getEditText().setText(beneficiary.getName());
+            tilTransferLimit.getEditText().setText(String.valueOf(beneficiary.getTransferLimit()));
+        } else if (beneficiaryState == BeneficiaryState.CREATE_QR) {
+            spAccountType.setSelection(beneficiary.getAccountType().getId());
+            tilAccountNumber.getEditText().setText(beneficiary.getAccountNumber());
+            tilOfficeName.getEditText().setText(beneficiary.getOfficeName());
         }
     }
 
+    /**
+     * Used for submitting a new or updating beneficiary application
+     */
     @OnClick(R.id.btn_beneficiary_submit)
     public void submitBeneficiary() {
+
+        tilAccountNumber.setErrorEnabled(false);
+        tilOfficeName.setErrorEnabled(false);
+        tilTransferLimit.setErrorEnabled(false);
+        tilBeneficiaryName.setErrorEnabled(false);
+
         if (accountTypeId == -1) {
             Toaster.show(rootView, getString(R.string.choose_account_type));
             return;
-        } else if (etAccountNumber.getText().toString().equals("")) {
-            Toaster.show(rootView, getString(R.string.enter_account_number));
+        } else if (tilAccountNumber.getEditText().getText().toString().equals("")) {
+            tilAccountNumber.setError(getString(R.string.enter_account_number));
             return;
-        } else if (etOfficeName.getText().toString().equals("")) {
-            Toaster.show(rootView, getString(R.string.enter_office_name));
+        } else if (tilOfficeName.getEditText().getText().toString().equals("")) {
+            tilOfficeName.setError(getString(R.string.enter_office_name));
             return;
-        } else if (etTransferLimit.getText().toString().equals("")) {
-            Toaster.show(rootView, getString(R.string.enter_transfer_limit));
+        } else if (tilTransferLimit.getEditText().getText().toString().equals("")) {
+            tilTransferLimit.setError(getString(R.string.enter_transfer_limit));
             return;
-        } else if (etBeneficiaryName.getText().toString().equals("")) {
-            Toaster.show(rootView, getString(R.string.enter_beneficiary_name));
+        } else if (tilTransferLimit.getEditText().getText().toString().equals(".")) {
+            tilTransferLimit.setError(getString(R.string.invalid_amount));
             return;
-        } else if (beneficiaryState == BeneficiaryState.CREATE ) {
+        } else if (tilTransferLimit.getEditText().getText().toString().matches("^0*")) {
+            tilTransferLimit.setError(getString(R.string.amount_greater_than_zero));
+            return;
+        } else if (tilBeneficiaryName.getEditText().getText().toString().equals("")) {
+            tilBeneficiaryName.setError(getString(R.string.enter_beneficiary_name));
+            return;
+        }
+
+        if (beneficiaryState == BeneficiaryState.CREATE_MANUAL ||
+                beneficiaryState == BeneficiaryState.CREATE_QR ) {
             submitNewBeneficiaryApplication();
         } else if (beneficiaryState == BeneficiaryState.UPDATE ) {
             submitUpdateBeneficiaryApplication();
@@ -170,29 +220,46 @@ public class BeneficiaryApplicationFragment extends BaseFragment implements
 
     }
 
+    /**
+     * Submit a new Beneficiary application
+     */
     private void submitNewBeneficiaryApplication() {
         BeneficiaryPayload beneficiaryPayload = new BeneficiaryPayload();
-        beneficiaryPayload.setAccountNumber(etAccountNumber.getText().toString());
-        beneficiaryPayload.setOfficeName(etOfficeName.getText().toString());
+        beneficiaryPayload.setAccountNumber(tilAccountNumber.getEditText().getText().toString());
+        beneficiaryPayload.setOfficeName(tilOfficeName.getEditText().getText().toString());
         beneficiaryPayload.setAccountType(accountTypeId);
-        beneficiaryPayload.setName(etBeneficiaryName.getText().toString());
-        beneficiaryPayload.setTransferLimit(Integer.parseInt(etTransferLimit.getText().toString()));
+        beneficiaryPayload.setName(tilBeneficiaryName.getEditText().getText().toString());
+        beneficiaryPayload.setTransferLimit(Integer.parseInt(tilTransferLimit.getEditText().
+                getText().toString()));
         presenter.createBeneficiary(beneficiaryPayload);
     }
 
+    /**
+     * Updates an existing beneficiary application
+     */
     private void submitUpdateBeneficiaryApplication() {
         BeneficiaryUpdatePayload payload = new BeneficiaryUpdatePayload();
-        payload.setName(etBeneficiaryName.getText().toString());
-        payload.setTransferLimit(Integer.parseInt(etTransferLimit.getText().toString()));
+        payload.setName(tilBeneficiaryName.getEditText().getText().toString());
+        payload.setTransferLimit(Integer.parseInt(tilTransferLimit.getEditText().getText().
+                toString()));
         presenter.updateBeneficiary(beneficiary.getId(), payload);
     }
 
+    /**
+     * Displays a {@link android.support.design.widget.Snackbar} on successfully creation of
+     * Beneficiary and pops fragments in order to go back to {@link BeneficiaryListFragment}
+     */
     @Override
     public void showBeneficiaryCreatedSuccessfully() {
         Toaster.show(rootView, getString(R.string.beneficiary_created_successfully));
         getActivity().getSupportFragmentManager().popBackStack();
+        getActivity().getSupportFragmentManager().popBackStack();
     }
 
+    /**
+     * Displays a {@link android.support.design.widget.Snackbar} on successfully updation of
+     * Beneficiary and pops fragments in order to go back to {@link BeneficiaryListFragment}
+     */
     @Override
     public void showBeneficiaryUpdatedSuccessfully() {
         Toaster.show(rootView, getString(R.string.beneficiary_updated_successfully));
@@ -200,6 +267,7 @@ public class BeneficiaryApplicationFragment extends BaseFragment implements
         getActivity().getSupportFragmentManager().popBackStack();
 
     }
+
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -211,6 +279,10 @@ public class BeneficiaryApplicationFragment extends BaseFragment implements
 
     }
 
+    /**
+     * It is called whenever any error occurs while executing a request
+     * @param msg Error message that tells the user about the problem.
+     */
     @Override
     public void showError(String msg) {
         Toaster.show(rootView, msg);

@@ -1,5 +1,6 @@
 package org.mifos.selfserviceapp.ui.adapters;
 
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -7,8 +8,11 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import org.mifos.selfserviceapp.R;
+import org.mifos.selfserviceapp.injection.ActivityContext;
 import org.mifos.selfserviceapp.models.Transaction;
-import org.mifos.selfserviceapp.utils.Constants;
+import org.mifos.selfserviceapp.utils.CurrencyUtil;
+import org.mifos.selfserviceapp.utils.DateHelper;
+import org.mifos.selfserviceapp.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,10 +30,12 @@ public class RecentTransactionListAdapter extends
         RecyclerView.Adapter<RecentTransactionListAdapter.ViewHolder> {
 
     private List<Transaction> transactions;
+    private Context context;
 
     @Inject
-    public RecentTransactionListAdapter() {
+    public RecentTransactionListAdapter(@ActivityContext Context context) {
         transactions = new ArrayList<>();
+        this.context = context;
     }
 
     @Override
@@ -43,15 +49,12 @@ public class RecentTransactionListAdapter extends
     public void onBindViewHolder(ViewHolder holder, int position) {
         Transaction transaction = getItem(position);
 
-        holder.tvAmount.setText(String.valueOf(transaction.getAmount() +
-                transaction.getCurrency().getCode()));
-        holder.tvTypeValue.setText(transaction.getType().getValue());
-        holder.tvTransactionsDate.setText(
-                transaction.getSubmittedOnDate().get(2).toString() +
-                        Constants.BACK_SLASH + transaction.getSubmittedOnDate().get(
-                        1).toString() +
-                        Constants.BACK_SLASH + transaction.getSubmittedOnDate().get(
-                        0).toString());
+        holder.tvAmount.setText(context.getString(R.string.string_and_string, transaction.
+                getCurrency().getDisplaySymbol(), CurrencyUtil.formatCurrency(context,
+                transaction.getAmount())));
+        holder.tvTypeValue.setText(Utils.formatTransactionType(transaction.getType().getValue()));
+        holder.tvTransactionsDate.setText(DateHelper.getDateAsString(transaction.
+                getSubmittedOnDate()));
     }
 
     public void setTransactions(List<Transaction> transactions) {
